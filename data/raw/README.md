@@ -12,8 +12,6 @@ Submitted: Dec 20,2021
 
 Data Available: Jan 2, 2022
 
-Flowcell Summary: 
+Flowcell & Lane Summary: 
 ![img-flowcell-report]()
 
-Lane Summary:
-![img-lane-report]()
