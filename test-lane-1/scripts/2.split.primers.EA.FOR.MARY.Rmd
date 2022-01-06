@@ -1,0 +1,69 @@
+---
+title: "split_markers.Rmd"
+author: "Eily Allan"
+date: "7/29/2021"
+output: html_document
+params:
+  run.num:
+    value: 6
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(filesstrings)
+library(here)
+
+fastq_noprimers_folder <- paste0("/Users/elizabethandruszkiewicz/GoogleDrive/UW/GitHub/NextGenNEPA_LOCAL/Output/","cutadapt_output","/MFtest/noprimers")
+
+```
+
+## Split primer-trimmed fastq files by marker 
+
+In between cutadapt and dada2, need to split sequencing runs by marker so dada2 is only using one marker at a time. That way can customize the amount to trim in dada2 by marker. 
+
+```{r find all files and split by marker}
+
+# use the pattern to sort out the files - ^ means "starts with" so we can use that to separate by marker
+BF3_files <- list.files(path = fastq_noprimers_folder, pattern = "^Locus_BF3", full.names = T)
+L_files <- list.files(path = fastq_noprimers_folder, pattern = "^Locus_Leray_Leray_", full.names = T)
+LXT_files <- list.files(path = fastq_noprimers_folder, pattern = "^Locus_LerayXT", full.names = T)
+
+# then we actually want to create subfolders for each marker and put move the files into each folder by marker
+new_BF3_folder <- paste0(fastq_noprimers_folder,"/BF3")
+new_L_folder <- paste0(fastq_noprimers_folder,"/Leray")
+new_LXT_folder <- paste0(fastq_noprimers_folder,"/LXT")
+
+# then actually create them
+dir.create(new_BF3_folder)
+dir.create(new_L_folder)
+dir.create(new_LXT_folder)
+
+# then we  need to move the files (which we already have listed out)
+file.move(BF3_files, new_BF3_folder)
+file.move(L_files, new_L_folder)
+file.move(LXT_files, new_LXT_folder)
+
+```
+
+## Split metadata files 
+
+Now we should also split the sequencing metadata file by marker to use as input into dada2
+
+```{r split metadata file by marker}
+cutadapt_output_metadata_path <- paste0(fastq_noprimers_folder, "/output.metadata.csv")
+cutadapt_output_metadata_all <- read.csv(cutadapt_output_metadata_path)
+
+# split up based on marker
+cutadapt_output_metadata_BF3 <- cutadapt_output_metadata_all[cutadapt_output_metadata_all$Locus == "BF3",]
+cutadapt_output_metadata_L <- cutadapt_output_metadata_all[cutadapt_output_metadata_all$Locus == "Leray",]
+cutadapt_output_metadata_LXT <- cutadapt_output_metadata_all[cutadapt_output_metadata_all$Locus == "LerayXT",]
+
+# write them all to csv files 
+write.csv(cutadapt_output_metadata_BF3, paste0(new_BF3_folder, "/cutadapt_output_metadata_BF3.csv"), row.names=FALSE)
+write.csv(cutadapt_output_metadata_L, paste0(new_L_folder, "/cutadapt_output_metadata_Leray.csv"), row.names=FALSE)
+write.csv(cutadapt_output_metadata_LXT, paste0(new_LXT_folder, "/cutadapt_output_metadata_LerayXT.csv"), row.names=FALSE)
+
+
+```
+

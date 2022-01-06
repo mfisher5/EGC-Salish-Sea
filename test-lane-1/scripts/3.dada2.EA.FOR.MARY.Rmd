@@ -1,0 +1,136 @@
+---
+title: "MF-dada2"
+author: "Eily Allan"
+date: "1/5/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dada2)
+library(tidyverse)
+library(digest)
+library(seqinr)
+```
+
+```{r set up }
+sample.metadata <- read_csv("/Users/elizabethandruszkiewicz/GoogleDrive/UW/GitHub/NextGenNEPA_LOCAL/Output/cutadapt_output/MFtest/noprimers/LXT/cutadapt_output_metadata_LerayXT.csv")
+path <- "/Users/elizabethandruszkiewicz/GoogleDrive/UW/GitHub/NextGenNEPA_LOCAL/Output/cutadapt_output/MFtest/noprimers/LXT"
+list.files(path)
+
+# Forward and reverse fastq filenames have format: SAMPLENAME_R1_001.fastq and SAMPLENAME_R2_001.fastq
+fnFs <- sort(list.files(path, pattern="_R1_001.fastq", full.names = TRUE))
+fnRs <- sort(list.files(path, pattern="_R2_001.fastq", full.names = TRUE))
+# Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
+#sample.names <- sapply(strsplit(basename(fnFs), "_"), `[`, 4)
+sample.names <- sample.metadata$Sample_name
+sample.names
+
+plotQualityProfile(fnFs[1])
+plotQualityProfile(fnRs[1])
+```
+
+```{r filter and trim}
+
+# Place filtered files in filtered/ subdirectory
+filtFs <- file.path(path, "filtered", paste0(sample.names, "_F_filt.fastq.gz"))
+filtRs <- file.path(path, "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
+names(filtFs) <- sample.names
+names(filtRs) <- sample.names
+
+out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(120,120),
+              maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
+              compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
+head(out)
+
+```
+
+```{r learn error rates and dada it}
+
+# since some have 0 need to remove them
+#filtFs <- filtFs[-13]
+#filtFs <- filtFs[-12]
+#filtRs <- filtRs[-13]
+#filtRs <- filtRs[-12]
+#sample.metadata <- sample.metadata[-13,]
+#sample.metadata <- sample.metadata[-12,]
+
+errF <- learnErrors(filtFs, multithread=TRUE)
+errR <- learnErrors(filtRs, multithread=TRUE)
+plotErrors(errF, nominalQ=TRUE)
+
+dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
+dadaRs <- dada(filtRs, err=errR, multithread=TRUE)
+
+# check it 
+dadaFs[[1]]
+
+# we are going to SKIP merging paired end reads for now because there is no overlap here 
+#mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
+
+# there is another term to do this so we have it formatted right to not merge them
+mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE, justConcatenate = TRUE)
+## Inspect the merger data.frame from the first sample
+head(mergers[[1]])
+```
+
+```{r make sequence table}
+seqtab <- makeSequenceTable(mergers)
+dim(seqtab)
+
+# Inspect distribution of sequence lengths
+table(nchar(getSequences(seqtab)))
+# so here all of our sequences are 250 bp in length 
+
+# remove chimeras 
+seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
+dim(seqtab.nochim)
+# check percentage of reads remaining after chimera removal (should be high)
+sum(seqtab.nochim)/sum(seqtab)
+seqtab.nochim.df <- as.data.frame(seqtab.nochim)
+
+
+# track through pipeline
+getN <- function(x) sum(getUniques(x))
+track <- cbind(out, sapply(dadaFs, getN), sapply(dadaRs, getN), sapply(mergers, getN), rowSums(seqtab.nochim))
+# If processing a single sample, remove the sapply calls: e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
+#track <- cbind(out, getN(dadaFs), getN(dadaRs), getN(mergers), rowSums(seqtab.nochim))
+colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
+rownames(track) <- sample.names
+head(track)
+
+```
+
+```{r setting up output files}
+
+# Set up output files 
+output.dir <- "/Users/elizabethandruszkiewicz/GoogleDrive/UW/GitHub/NextGenNEPA_EA/Output/dada2_output/MFtest/LerayXT"
+conv_file <- file.path(output.dir,"F_only_hash_key.csv")
+conv_file.fasta <- file.path(output.dir,"F_only_hash_key.fasta")
+ASV_file <-  file.path(output.dir,"F_only_ASV_table.csv")
+print (conv_file)
+print (conv_file.fasta)
+print(ASV_file)
+
+# actually write output
+conv_table <- tibble( Hash = "", Sequence ="")
+Hashes <- map_chr (colnames(seqtab.nochim.df), ~ digest(.x, algo = "sha1", serialize = F, skip = "auto")) 
+conv_table <- tibble (Hash = Hashes,
+                      Sequence = colnames(seqtab.nochim.df))
+
+colnames(seqtab.nochim.df) <- Hashes
+write_csv(conv_table, conv_file) # write the table into a file
+write.fasta(sequences = as.list(conv_table$Sequence),
+            names     = as.list(conv_table$Hash),
+            file.out = conv_file.fasta)
+seqtab.nochim.df <- bind_cols(sample.metadata %>%
+                                select(Sample_name, Locus),
+                              seqtab.nochim.df)
+current_asv <- 
+  seqtab.nochim.df %>%
+  pivot_longer(cols = c(- Sample_name, - Locus),
+               names_to = "Hash",
+               values_to = "nReads") %>%
+  filter(nReads > 0) 
+write_csv(current_asv, ASV_file)
+```

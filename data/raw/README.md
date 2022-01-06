@@ -13,5 +13,5 @@ Submitted: Dec 20,2021
 Data Available: Jan 2, 2022
 
 Flowcell & Lane Summary: 
-![img-flowcell-report]()
+![img-flowcell-report](https://github.com/mfisher5/EGC-Salish-Sea/blob/master/data/raw/qc/lane_1_flowcell_summary.png?raw=true)
 

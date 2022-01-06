@@ -1,0 +1,103 @@
+---
+title: "cutadapt.wrapper"
+author: "Mary via Eily via Moncho"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+geometry: margin=1in
+fontsize: 11pt
+---
+
+
+# Description
+
+Use *cutadapt* to remove Nextera indices and PCR primers from DNA sequences. 
+This RMarkdown doc is just a means to passing the parameters from the metadata file into a bash script.
+
+
+# Set up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(here)
+library(tidyverse)
+
+params <- tibble(run.num=1, minlength=100)
+```
+<br>
+
+User directories and inputs
+```{r}
+# folder with fastq files
+fastq_dir <- "data/raw"
+
+# folder for output
+output_dir <- "data/cutadapt"
+
+# which lane of sequencing is being analyzed?
+lane <- 1
+```
+<br>
+
+
+
+## input / output files
+
+Read in the file with sequencing metadata. The file must include the following columns: 
+
+- Sample_name - The name that makes sense to you and your project (No spaces in the name would be better)
+- Locus: The name of the locus you want to use (e.g. Leray_COI)
+- PrimerF: The nucleotide sequence of the forward primer - supports IUPAC characters 
+- PrimerR: Ditto for the reverse primer (also in 5' -> 3' direction)
+- file1: it should match exactly the output of the Miseq.
+- file2: Same for the second read.
+```{r}
+seqmetadat <- here::here(output_dir, paste0("Lane_",lane,"_sequencing_metadata.csv"))
+```
+<br>
+
+create the output folders and parameters log file. 
+*IMPORTANT* the script won't work unless the absolute file path is used
+```{r}
+fastqfolder <- paste0(here::here(),"/", fastq_dir)
+
+outputfolder <- paste0(here::here(), "/", output_dir, "/lane_",lane,"_",format(Sys.Date(), "%Y%m%d"))
+
+paramsfile <- paste0(outputfolder,"/params.txt")
+```
+
+
+
+# Save params into a file
+
+Create the output folder
+```{r}
+dir.create(outputfolder)
+```
+<br>
+
+Create and write the parameters file
+```{r}
+params2 <- c(fastqfolder,seqmetadat, outputfolder, params$minlength)
+
+tibble(values = as.character(params2), names = c("fastqfolder", "sequencingmetadatafile", "outputfolder", "minlength")) %>% 
+  pivot_wider(names_from = names,
+              values_from = values) %>%
+  write_csv(paramsfile)
+```
+<br>
+
+Copy this into the code chunk below: 
+```{r}
+paramsfile
+```
+
+Run the following in the terminal:
+```{r eval=FALSE}
+bash test.bash.sh C:/Users/mcf05/Documents/PhD/DNA\_Metabarcoding/GreenCrab/EGC-Salish-Sea/data/cutadapt/lane_1_20220105/params.txt >> C:/Users/mcf05/Documents/PhD/DNA\_Metabarcoding/GreenCrab/EGC-Salish-Sea/data/cutadapt/lane_1_20220105/test_bash_log.txt
+```
+
+
+

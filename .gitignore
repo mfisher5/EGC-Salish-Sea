@@ -1,2 +1,3 @@
 data/raw/*
 !data/raw/qc/
+test-lane-1/data/*
