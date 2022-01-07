@@ -1,0 +1,98 @@
+---
+title: "split_markers.Rmd"
+author: "Mary Fisher, Eily Allan"
+date: "2022-01-07"
+output: 
+  html_document:
+    toc: yes
+---
+
+
+# Description
+
+In between cutadapt and dada2, it's necessary to split sequencing runs by marker so dada2 is only using one marker at a time. That way can customize the amount to trim in dada2 by marker. 
+
+*Originally written 7/29/2021, Eily Allen*
+
+# Set up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(filesstrings)
+library(tidyverse)
+library(here)
+```
+<br>
+
+User directories
+```{r}
+# where is the trimmed fastq output from cutadapt?
+cutadapt_outdir <- "test-lane-1/data/cutadapt/noprimers"
+
+# what is the root directory for the marker-specific subfolders?
+split_outdir <- "test-lane-1/data/cutadapt"
+```
+<br>
+
+parameters - in this script, only the run number.
+```{r}
+params <- data.frame(run.num=6)
+```
+<br>
+
+
+
+# Split primer-trimmed fastq files by marker
+
+use the pattern to sort out the files - `^` means "starts with" so we can use that to separate by marker
+```{r}
+fastq_noprimers_folder <- paste0(here(cutadapt_outdir))
+
+BF3_files <- list.files(path = fastq_noprimers_folder, pattern = "^Locus_BF3_BF3", full.names = T)
+L_files <- list.files(path = fastq_noprimers_folder, pattern = "^Locus_Leray_Leray", full.names = T)
+LXT_files <- list.files(path = fastq_noprimers_folder, pattern = "^Locus_LerayXT_LXT", full.names = T)
+```
+<br>
+
+now create subfolders for each marker
+```{r}
+dir.create(here(split_outdir, "BF3"))
+dir.create(here(split_outdir, "Leray"))
+dir.create(here(split_outdir, "LerayXT"))
+```
+<br>
+
+and now move the files (which we already have listed out)
+```{r}
+file.move(BF3_files, here(split_outdir, "BF3"))
+file.move(L_files, here(split_outdir, "Leray"))
+file.move(LXT_files, here(split_outdir, "LerayXT"))
+```
+
+
+
+# Split metadata files 
+
+Now we should also split the sequencing metadata file by marker to use as input into dada2.
+
+Read in the sequencing metadata file produced by cutadapt.
+```{r split metadata file by marker}
+cutadapt_output_metadata_all <- read_csv(paste0(fastq_noprimers_folder, "/output.metadata.csv"))
+```
+<br>
+
+split up the sample / file info based on marker, and write the new dataframes to separate csv files 
+```{r}
+cutadapt_output_metadata_BF3 <- filter(cutadapt_output_metadata_all, Locus == "BF3")
+cutadapt_output_metadata_L <- filter(cutadapt_output_metadata_all, Locus == "Leray")
+cutadapt_output_metadata_LXT <- filter(cutadapt_output_metadata_all, Locus == "LerayXT")
+
+# write them all to csv files 
+write.csv(cutadapt_output_metadata_BF3, here(split_outdir, "BF3", "cutadapt_output_metadata_BF3.csv"), row.names=FALSE)
+write.csv(cutadapt_output_metadata_L, here(split_outdir, "Leray", "cutadapt_output_metadata_Leray.csv"), row.names=FALSE)
+write.csv(cutadapt_output_metadata_LXT, here(split_outdir, "LerayXT", "cutadapt_output_metadata_LerayXT.csv"), row.names=FALSE)
+
+
+```
+
