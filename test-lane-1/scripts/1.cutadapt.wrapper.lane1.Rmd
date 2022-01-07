@@ -1,0 +1,200 @@
+---
+title: "cutadapt.wrapper"
+author: "M Fisher, via Eily via Moncho"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  html_document:
+    toc: yes
+---
+
+
+
+# Description
+
+Use *cutadapt* to remove Nextera indices and PCR primers from DNA sequences. 
+This RMarkdown doc is just a means to passing the parameters from the metadata file into a bash script.
+
+**Inputs** for this script: 
+
+1. file with primer sequences
+2. raw, demultiplexed sequencing data in fastq.gz files
+
+*IMPORTANT! this won't work unless you manually copy and paste in the full file path to params.txt file at bottom (code chunks = test_bash, run_cutadapt). Do that then knit.*
+<br>
+<br>
+
+
+# Set up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(here)
+library(tidyverse)
+```
+<br>
+
+User directories and inputs
+```{r}
+# folder with fastq files
+fastq_dir <- "data/raw/lane_1"
+
+# folder for output
+output_dir <- "test-lane-1/data/cutadapt"
+
+# folder for sequencing metadata file
+meta_output_dir <- "test-lane-1/data"
+
+# which lane of sequencing is being analyzed?
+lane <- 1
+
+# ?
+params <- data.frame(minlength=100)
+```
+<br>
+
+Where is the file with the primer sequences, and what is it called? The columns in this file should be as follows:  `primer` | `primerF` | `primerR`. The *primer* name in this file should match the name in the sequencing center metadata file -- if working across different loci, the locus name can be used in this column.  
+```{r}
+meta_dir <- "data"
+primerfilename <- "primer_sequences.csv"
+```
+<br>
+
+
+# Input / output files
+
+## create sequencing metadata file
+
+The minimum info needed for the sequencing metadata file is:
+
+- Sample_name - The name that makes sense to you and your project (No spaces in the name)
+- Locus: The name of the locus you want to use (e.g. Leray_COI)
+- PrimerF: The nucleotide sequence of the forward primer - supports IUPAC characters 
+- PrimerR: Ditto for the reverse primer (also in 5' -> 3' direction)
+- file1: it should match exactly the output of the Miseq.
+- file2: Same for the second read.
+        
+
+Read in the .csv file with the primer sequences
+```{r}
+primer_seqs <- read_csv(here(meta_dir, primerfilename))
+```
+<br>
+
+Get all of the sequencing filenames
+```{r}
+## forward
+ffilenames <- list.files(path = here("data/raw/lane_1/"), 
+                         pattern="*R1_001.fastq.gz")
+## reverse
+rfilenames <- list.files(path = here("data/raw/lane_1/"), 
+                         pattern="*R2_001.fastq.gz")
+```
+<br>
+
+Grab the sample IDs and sample numbers ("name") from the filenames, arrange them in order of sample number, and combine the datasets.
+```{r}
+fdat <- data.frame(file1=ffilenames) %>%
+  mutate(sample_name=str_remove(file1,"_L001_R1_001.fastq.gz")) %>%
+  separate(col=sample_name, into=c("sample_id","Sample_name"), sep=-2) %>%
+  mutate(sample_id=str_remove(sample_id,"_S"),
+         Sample_name=str_remove(Sample_name,"S")) %>%
+  arrange(as.numeric(Sample_name))
+
+
+rdat <- data.frame(file2=rfilenames) %>%
+  mutate(sample_name=str_remove(file2,"_L001_R2_001.fastq.gz")) %>%
+  separate(col=sample_name, into=c("sample_id","Sample_name"), sep=-2) %>%
+  mutate(sample_id=str_remove(sample_id,"_S"),
+         Sample_name=str_remove(Sample_name,"S")) %>%
+  arrange(as.numeric(Sample_name))
+
+sequencingmetafile <- full_join(fdat,rdat,by=c("Sample_name","sample_id")) %>%
+  dplyr::select(Sample_name,file1,file2)
+
+```
+<br>
+
+Add primer information
+```{r}
+sequencingmetafile %<>%
+  mutate(primer=ifelse(grepl(primer_seqs$primer[1],file1), primer_seqs$primer[1],
+                   ifelse(grepl("LXT", file1), "LerayXT",
+                          ifelse(grepl(primer_seqs$primer[3],file1),"Leray",NA)))) %>%
+  left_join(primer_seqs, by="primer") %>%
+  mutate(Locus=primer,
+         PrimerF=primerF,
+         PrimerR=primerR) %>%
+  dplyr::select(Sample_name,file1,file2,PrimerF,PrimerR,Locus)
+```
+<br>
+
+Save file
+```{r}
+write_csv(sequencingmetafile, here(meta_output_dir, paste0("metadata-cutadapt-input-lane", lane, ".csv")))
+```
+<br>
+<br>
+
+
+## store params 
+
+folder for output from bash script
+```{r}
+outputfolder <- paste0(here(output_dir))
+dir.create(outputfolder)
+
+paramsfile <- paste0(outputfolder,"/params.txt")
+```
+<br>
+
+sequencing metadata file name and directory
+```{r}
+sequencingmetadatafile <- paste0(here(meta_output_dir, paste0("metadata-cutadapt-input-lane", lane, ".csv")))
+```
+<br>
+
+full file path to fastq files
+```{r}
+fastqfolder <- paste0(here(fastq_dir))
+```
+<br>
+
+create and save the params file, which will be called in bash to run cutadapt.
+```{r}
+params2 <- c(fastqfolder,sequencingmetadatafile, outputfolder, params$minlength)
+
+tibble(values = as.character(params2), names = c("fastqfolder", "sequencingmetadatafile", "outputfolder", "minlength")) %>% 
+  pivot_wider(names_from = names,
+              values_from = values) %>%
+  write_csv(paramsfile)
+```
+<br>
+<br>
+
+# Cutadapt wrapper
+
+First, lets test to make sure the inputs are correct. Run the following test script in the terminal, from the root directory. 
+```{bash test_bash, eval=FALSE}
+bash test-lane-1/scripts/test.bash.sh "C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/cutadapt/params.txt"
+```
+<br>
+
+Run the following in the terminal. This wrapper script will print some parameter values to the terminal (see below) before running the core *cutadapt* script, which is `run.cutadapt.sh`. Note that output from `run.cutadapt.sh` will be saved into a log file, instead of printed to the terminal. 
+```{bash run_cutadapt, eval=FALSE}
+bash 1_cutadapt_wrapper.sh "C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/cutadapt/params.txt"
+```
+
+      > /c/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea
+      > fastqfolder,sequencingmetadatafile,outputfolder,minlength
+      > C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/data/raw/lane_1,C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/metadata-cutadapt-input-lane1.csv,C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/cutadapt,100
+      > awk: cmd. line:1: fatal: cannot open file ` ' for reading (No such file or directory)
+      > fastq files will be read in from this folder:
+      > C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/data/raw/lane_1
+      > ---
+      > and trimmed fastq files will be saved into this folder:
+      > C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/cutadapt
+      > ---
+      > ---
+      > now running cutadapt script... output will be saved to a log file.
+      > /c/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/scripts/run.cutadapt.sh: line 12: /c/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/scripts/core/*: No such file or directory
+

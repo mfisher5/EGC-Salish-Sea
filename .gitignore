@@ -1,3 +1,9 @@
 data/raw/*
 !data/raw/qc/
+
+data/databases/*
+
 test-lane-1/data/*
+!test-lane-1/data/metadata-cutadapt-input-lane1.csv
+
+R/*.exe
