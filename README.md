@@ -15,8 +15,6 @@
 
 **Observe diet composition** with DNA Metabarcoding
 - COI region, using Leray / LerayXT / BF3-BR2 primers (identify *one* to move forward with using first sequencing lane)
-- Lab space: SEFS Shared Genetics Lab >> Kelly Lab
-- Sequencing: PNW Genomics Center
 
 
 
@@ -26,7 +24,6 @@
 
 
 **Estimate site-specific growth rate** using bioenergetic models. By first parameterizing the bioenergetic model with mock communities / stepped PCR replicates, we can use the relative abundance index, plus temperature data from each site, and stomach fullness information, to calculate growth.
-- A temperature logger is placed in green grab habitat at each sampling site
 
 
 
@@ -35,10 +32,5 @@
 - Bioenergetic models will be based on Kirstin Holsman’s NRG package
 - Bioinformatics and additional bioenergetics scripts / output will be in a public, archived project repository on Github
 
-## Results & Dissemination
-- Newsletter write-up for WSG Crab Team
-- Publication
-
-What role can the researchers play in supporting community or organization actions?
 
 
