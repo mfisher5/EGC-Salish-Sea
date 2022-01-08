@@ -17,11 +17,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
 if(!require("here")) {install.packages("here")}
 if(!require("tidyverse")) {install.packages("tidyverse")}
+if(!require("magrittr")) {install.packages("magrittr")}
 if(!require("digest")) {install.packages("digest")}
 if(!require("seqinr")) {install.packages("seqinr")}
 
-if(!requireNamespace("BiocManager", quietly = TRUE)){install.packages("BiocManager")}
-BiocManager::install("dada2", version = "3.10")
+# if(!requireNamespace("BiocManager", quietly = TRUE)){install.packages("BiocManager")}
+# BiocManager::install("dada2", version = "3.10")
 
 library(dada2)
 library(digest)
@@ -34,6 +35,9 @@ User directories and inputs
 # root directory for cutadapt
 cutadapt_dir <- "test-lane-1/data/cutadapt"
 
+# output directory
+outdir <- "test-lane-1/data/dada2"
+
 # vector of different markers, as they appear in directories / metadata file
 markers <- c("BF3","Leray","LerayXT")
 ```
@@ -44,61 +48,82 @@ markers <- c("BF3","Leray","LerayXT")
 ## Data
 
 read in sequencing metadata, file names.
-```{r}
+```{r message=FALSE}
 marker <- markers[1]
 marker.meta <- read_csv(here(cutadapt_dir, marker, paste0("cutadapt_output_metadata_",marker,".csv")))
 
 ## forward and reverse filenames
 fnFs <- sort(list.files(path=here(cutadapt_dir,marker), pattern="_R1_001.fastq", full.names = TRUE))
 fnRs <- sort(list.files(path=here(cutadapt_dir,marker), pattern="_R2_001.fastq", full.names = TRUE))
+```
+<br>
 
-sample.names <- marker.meta$Sample_name
+get the sample names, which will be used to name the filtered files.
+```{r}
+# sample.names <- marker.meta$Sample_name
+prefix <- paste0("Locus_",marker[1],"_")
+suffix <- paste0("_L001_R1_001.fastq.fastq")
+sample.names <- str_remove(marker.meta$file1, prefix)
+sample.names <- str_remove(sample.names,suffix)
 ```
 <br>
 
 Plot forward read quality scores, one sample per group
 ```{r echo=FALSE}
-plotQualityProfile(fnFs[c(1,2,6,18,25)])
+plotQualityProfile(fnFs[c(1,2,6,19,25)])
 ```
 <br>
 
 Plot forward read quality scores, one sample per group
 ```{r echo=FALSE}
-plotQualityProfile(fnRs[1,2,6,18,25])
+plotQualityProfile(fnRs[c(1,2,6,19,25)])
 ```
 <br>
 
-So the kangaroo, WACO.2021, and WASS.2020 samples look pretty good until ~130bp. The WASS.2018 sample is pretty attrocious, and my baby dungy sample isn't looking much better. 
+So the kangaroo, WACO.2021, and WASS.2020 samples look pretty good until ~130bp. The WASS.2018 sample is pretty atrocious, and my baby dungy sample isn't looking much better. Another red flag is how few reads I have left after running `cutadapt`...
 
-## filter and trim
+## Filter and trim
 
-```{r filter and trim}
-
-# Place filtered files in filtered/ subdirectory
-filtFs <- file.path(path, "filtered", paste0(sample.names, "_F_filt.fastq.gz"))
-filtRs <- file.path(path, "filtered", paste0(sample.names, "_R_filt.fastq.gz"))
+name the filtered sequencing data
+```{r}
+filtFs <- file.path(here(outdir, paste0(sample.names, "_F_filt.fastq.gz")))
+filtRs <- file.path(here(outdir, paste0(sample.names, "_R_filt.fastq.gz")))
 names(filtFs) <- sample.names
 names(filtRs) <- sample.names
+```
+<br>
 
+Filter and trim using `dada2`.
+
+- `truncLen` truncates the sequence length, and should be based on per-base quality scores
+- `maxEE` discards reads with high "expected errors" = $\sum(10^{-Q/10})$
+- `rm.phix` removes reads from PhiX spike
+- use `compress` to gzip the output fastqs
+```{r}
 out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(120,120),
               maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
               compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
 head(out)
+```
+<br> 
 
+Before `dada2` can learn error rates, the files that have 0 reads need to be removed from the file list. 
+```{r}
+files_to_remove <- as.data.frame(out) %>% 
+  rownames_to_column() %>%
+  filter(reads.out==0) %>%
+  mutate(sample_names=str_remove(rowname, paste0("Locus_",marker,"_"))) %>%
+  mutate(sample_names=str_remove(sample_names,paste0("_L001_R1_001.fastq.fastq"))) %>%
+  separate(sample_names, into=c("id","sample_number"), sep=-2, remove=FALSE)
+
+filtFs <- filtFs[-which(names(filtFs) %in% files_to_remove$sample_names)]
+filtRs <- filtRs[-which(names(filtRs) %in% files_to_remove$sample_names)]
+marker.meta %<>% filter(!(Sample_name %in% files_to_remove$sample_number))
 ```
 
-```{r learn error rates and dada it}
-
-# since some have 0 need to remove them
-#filtFs <- filtFs[-13]
-#filtFs <- filtFs[-12]
-#filtRs <- filtRs[-13]
-#filtRs <- filtRs[-12]
-#sample.metadata <- sample.metadata[-13,]
-#sample.metadata <- sample.metadata[-12,]
-
-errF <- learnErrors(filtFs, multithread=TRUE)
-errR <- learnErrors(filtRs, multithread=TRUE)
+```{r eval=FALSE}
+errF <- learnErrors(filtFs)
+errR <- learnErrors(filtRs)
 plotErrors(errF, nominalQ=TRUE)
 
 dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
@@ -115,8 +140,11 @@ mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE, justConcaten
 ## Inspect the merger data.frame from the first sample
 head(mergers[[1]])
 ```
+***Error in derepFastq(fls[[i]], qualityType = qualityType) : Not all provided files exist.***
 
-```{r make sequence table}
+
+
+```{r make sequence table, eval=FALSE}
 seqtab <- makeSequenceTable(mergers)
 dim(seqtab)
 
@@ -143,7 +171,7 @@ head(track)
 
 ```
 
-```{r setting up output files}
+```{r setting up output files, eval=FALSE}
 
 # Set up output files 
 output.dir <- "/Users/elizabethandruszkiewicz/GoogleDrive/UW/GitHub/NextGenNEPA_EA/Output/dada2_output/MFtest/LerayXT"
