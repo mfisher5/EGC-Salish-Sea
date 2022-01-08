@@ -1,6 +1,6 @@
 ## Test Sequencing Lane (L1)
 
-I have separated the workflow for analyzing the test sequencing lane data because this lane was sequenced as PE150 instead of PE300; as a result, the target sequences are only partially sequences and there is a gap (13bp for Leray, 118bp for BF3) between the forward and reverse sequences. 
+I have separated the workflow for analyzing the test sequencing lane data because this lane was sequenced as PE150 instead of PE300; as a result, the target sequences are only partial sequences and there is a gap (13bp for Leray, 118bp for BF3) between the forward and reverse sequences. 
 
 I'm going to try to make this work anyway, to see if I can still answer the following questions intended for the test lane:
 
