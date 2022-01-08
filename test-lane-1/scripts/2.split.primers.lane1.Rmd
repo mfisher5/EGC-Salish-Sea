@@ -46,7 +46,7 @@ params <- data.frame(run.num=6)
 # Split primer-trimmed fastq files by marker
 
 use the pattern to sort out the files - `^` means "starts with" so we can use that to separate by marker
-```{r}
+```{r eval=FALSE}
 fastq_noprimers_folder <- paste0(here(cutadapt_outdir))
 
 BF3_files <- list.files(path = fastq_noprimers_folder, pattern = "^Locus_BF3_BF3", full.names = T)
@@ -56,7 +56,7 @@ LXT_files <- list.files(path = fastq_noprimers_folder, pattern = "^Locus_LerayXT
 <br>
 
 now create subfolders for each marker
-```{r}
+```{r eval=FALSE}
 dir.create(here(split_outdir, "BF3"))
 dir.create(here(split_outdir, "Leray"))
 dir.create(here(split_outdir, "LerayXT"))
@@ -64,7 +64,7 @@ dir.create(here(split_outdir, "LerayXT"))
 <br>
 
 and now move the files (which we already have listed out)
-```{r}
+```{r eval=FALSE}
 file.move(BF3_files, here(split_outdir, "BF3"))
 file.move(L_files, here(split_outdir, "Leray"))
 file.move(LXT_files, here(split_outdir, "LerayXT"))
@@ -77,13 +77,13 @@ file.move(LXT_files, here(split_outdir, "LerayXT"))
 Now we should also split the sequencing metadata file by marker to use as input into dada2.
 
 Read in the sequencing metadata file produced by cutadapt.
-```{r split metadata file by marker}
+```{r  eval=FALSE}
 cutadapt_output_metadata_all <- read_csv(paste0(fastq_noprimers_folder, "/output.metadata.csv"))
 ```
 <br>
 
 split up the sample / file info based on marker, and write the new dataframes to separate csv files 
-```{r}
+```{r eval=FALSE}
 cutadapt_output_metadata_BF3 <- filter(cutadapt_output_metadata_all, Locus == "BF3")
 cutadapt_output_metadata_L <- filter(cutadapt_output_metadata_all, Locus == "Leray")
 cutadapt_output_metadata_LXT <- filter(cutadapt_output_metadata_all, Locus == "LerayXT")
@@ -95,4 +95,101 @@ write.csv(cutadapt_output_metadata_LXT, here(split_outdir, "LerayXT", "cutadapt_
 
 
 ```
+<br>
+
+
+# Check cutadapt output
+
+**How do the number of reads / sample change between the raw sequencing data, and the cutadapt-processed data??**
+
+This is the first time I'm running this script, so I'm going to check the cutadapt output with Eily's output, for the samples that were run by both of us. 
+
+Eily's metadata to match sample ids with sample numbers
+```{r message=FALSE}
+ea_metadat <- read_csv(here("test-lane-1/data", "metadata-input-MF-test_fix.csv")) %>%
+  separate(col=file1, into=c("id1","id2"), sep="_S", remove=FALSE)
+
+ea_metadat %<>% mutate(id1=ifelse(id2=="peedVacNegative", "BF3_SpeedVacNegative",id1)) %>%
+  dplyr::select(Sample_name,id1,Locus,file1)
+```
+<br>
+
+the raw sequencing data read counts that I got from the NW Genomics center
+```{r message=FALSE}
+raw_readdat <- read_csv(here("data/raw/qc","EGC-Salish-Sea_Lane-1_MiSeq-Stats.csv"))
+```
+<br>
+Join the sample numbers to the raw read depth data
+```{r message=FALSE}
+raw_readdat %<>% left_join(ea_metadat, by=c("sample"="id1")) %>%
+  filter(!is.na(Sample_name))
+```
+<br>
+<br>
+
+## BF3
+
+```{r message=FALSE}
+bf3_ea_readdat <- read_csv(here("test-lane-1/data/BF3", "ASV_table.csv"))
+
+bf3_ea_readdat %<>% left_join(raw_readdat, by=c("Sample_name", "Locus")) %>%
+  group_by(Sample_name, sample, total_reads_per_lane) %>%
+  summarise(total_reads=sum(nReads)) %>%
+  rename(raw_reads=total_reads_per_lane, cutadapt_reads=total_reads)
+```
+<br>
+
+```{r echo=FALSE}
+plotdat <- bf3_ea_readdat %>% pivot_longer(cols=c(raw_reads, cutadapt_reads), names_to="step", values_to="read_count")
+ggplot(plotdat, aes(x=sample,y=read_count, fill=step)) +
+  geom_col(position="dodge") +
+  theme_bw() +theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+<br>
+
+## Leray
+
+```{r message=FALSE}
+l_ea_readdat <- read_csv(here("test-lane-1/data/Leray", "ASV_table.csv"))
+
+l_ea_readdat %<>% left_join(raw_readdat, by=c("Sample_name", "Locus")) %>%
+  group_by(Sample_name, sample, total_reads_per_lane) %>%
+  summarise(total_reads=sum(nReads)) %>%
+  rename(raw_reads=total_reads_per_lane, cutadapt_reads=total_reads)
+```
+<br>
+
+```{r echo=FALSE}
+plotdat <- l_ea_readdat %>% pivot_longer(cols=c(raw_reads, cutadapt_reads), names_to="step", values_to="read_count")
+ggplot(plotdat, aes(x=sample,y=read_count, fill=step)) +
+  geom_col(position="dodge") +
+  theme_bw() +theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+<br>
+
+## LerayXT
+
+```{r message=FALSE}
+lxt_ea_readdat <- read_csv(here("test-lane-1/data/LerayXT", "ASV_table.csv"))
+
+lxt_ea_readdat %<>% left_join(raw_readdat, by=c("Sample_name", "Locus")) %>%
+  group_by(Sample_name, sample, total_reads_per_lane) %>%
+  summarise(total_reads=sum(nReads)) %>%
+  rename(raw_reads=total_reads_per_lane, cutadapt_reads=total_reads)
+```
+<br>
+
+```{r echo=FALSE}
+plotdat <- lxt_ea_readdat %>% pivot_longer(cols=c(raw_reads, cutadapt_reads), names_to="step", values_to="read_count")
+ggplot(plotdat, aes(x=sample,y=read_count, fill=step)) +
+  geom_col(position="dodge") +
+  theme_bw() +theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+
+
+
+
+
 
