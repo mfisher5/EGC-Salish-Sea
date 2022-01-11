@@ -1,10 +1,10 @@
 #!/bin/bash
 
 
-FILE_LIST=("data/raw/lane_1/BF3_WACO_2021_003a_S16_L001_R1_001.fastq")
+FILE_LIST=("data/raw/lane_1/Leray_MARPT_01a_S59_L001_R1_001.fastq")
 
 SUB="@M00"
-SEQS=("")
+COUNT=0
 
 for file in ${FILE_LIST}
 do
