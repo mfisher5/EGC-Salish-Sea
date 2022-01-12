@@ -1,0 +1,120 @@
+[Header],,,,,,,,,,,,
+Date,12/19/2021,,,,,,,,,,,
+Workflow,GenerateFASTQ,,,,,,,,,,,
+Assay,IDT-ILMN Nextera DNA UD Indexes (384) - Nextera DNA Flex,,,,,,,,,,,
+Index Kit,IDT-ILMN Nextera DNA UD Indexes (384),,,,,,,,,,,
+Description,"European Green Crab Diet Metabarcoding, Lane 1",,,,,,,,,,,
+Chemistry,Amplicon,,,,,,,,,,,
+,,,,,,,,,,,,
+[Reads],,,,,,,,,,,,
+151,,,,,,,,,,,,
+151,,,,,,,,,,,,
+,,,,,,,,,,,,
+[Settings],,,,,,,,,,,,
+Adapter,CTGTCTCTTATACACATCT,,,,,,,,,,,
+,,,,,,,,,,,,
+[Data],,,,,,,,,,,,
+Lane,Sample_ID,Sample_Name,Index_Plate,Index_Plate_Well,I7_Index_ID,index,I5_Index_ID,index2,Sample_Project,Description,Changed?,
+1,1,Leray.WACO.2021.002a,A,A01,UDP0001,GAACTGAGCG,UDP0001,TCGTGGAGCG,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,2,Leray.WACO.2021.002b,A,B01,UDP0002,AGGTCAGATA,UDP0002,CTACAAGATA,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,3,Leray.WACO.2021.002c,A,C01,UDP0003,CGTCTCATAT,UDP0003,TATAGTAGCT,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,4,Leray.WACO.2021.003a,A,D01,UDP0004,ATTCCATAAG,UDP0004,TGCCTGGTGG,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,5,Leray.WACO.2021.003b,A,E01,UDP0005,GACGAGATTA,UDP0005,ACATTATCCT,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,6,Leray.WACO.2021.003c,A,F01,UDP0006,AACATCGCGC,UDP0006,GTCCACTTGT,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,7,Leray.WACO.2021.001a,A,G01,UDP0007,CTAGTGCTCT,UDP0007,TGGAACAGTA,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,8,Leray.WACO.2021.001b,A,H01,UDP0008,GATCAAGGCA,UDP0008,CCTTGTTAAT,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,9,Leray.WACO.2021.001c,A,A02,UDP0009,GACTGAGTAG,UDP0009,GTTGATAGTG,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,10,BF3.WACO.2021.001a,A,B02,UDP0010,AGTCAGACGA,UDP0010,ACCAGCGACA,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,11,BF3.WACO.2021.001b,A,C02,UDP0011,CCGTATGTTC,UDP0011,CATACACTGT,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,12,BF3.WACO.2021.001c,A,D02,UDP0012,GAGTCATAGG,UDP0012,GTGTGGCGCT,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,13,BF3.WACO.2021.002a,A,E02,UDP0013,CTTGCCATTA,UDP0013,ATCACGAAGG,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,14,BF3.WACO.2021.002b,A,F02,UDP0014,GAAGCGGCAC,UDP0014,CGGCTCTACT,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,15,BF3.WACO.2021.002c,A,G02,UDP0015,TCCATTGCCG,UDP0015,GAATGCACGA,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,16,BF3.WACO.2021.003a,A,H02,UDP0016,CGGTTACGGC,UDP0016,AAGACTATAG,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,17,BF3.WACO.2021.003b,A,A03,UDP0017,GAGAATGGTT,UDP0017,TCGGCAGCAA,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,18,BF3.WACO.2021.003c,A,B03,UDP0018,AGAGGCAACC,UDP0018,CTAATGATGG,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,19,LXT.WACO.2021.001a,A,C03,UDP0019,CCATCATTAG,UDP0019,GGTTGCCTCT,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,20,LXT.WACO.2021.001b,A,D03,UDP0020,GATAGGCCGA,UDP0020,CGCACATGGC,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,21,LXT.WACO.2021.001c,A,E03,UDP0021,ATGGTTGACT,UDP0021,GGCCTGTCCT,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,22,LXT.WACO.2021.002a,A,F03,UDP0022,TATTGCGCTC,UDP0022,CTGTGTTAGG,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,23,LXT.WACO.2021.002b,A,G03,UDP0023,ACGCCTTGTT,UDP0023,TAAGGAACGT,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,24,LXT.WACO.2021.002c,A,H03,UDP0024,TTCTACATAC,UDP0024,CTAACTGTAA,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,25,LXT.WACO.2021.003a,A,A04,UDP0025,AACCATAGAA,UDP0025,GGCGAGATGG,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,26,LXT.WACO.2021.003b,A,B04,UDP0026,GGTTGCGAGG,UDP0026,AATAGAGCAA,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,27,LXT.WACO.2021.003c,A,C04,UDP0027,TAAGCATCCA,UDP0027,TCAATCCATT,EGC_Diet,European green crab diet metabarcoding - WA Coast,,
+1,28,Leray.WASS.2018.062VA,A,D04,UDP0028,ACCACGACAT,UDP0028,TCGTATGCGG,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,BF3.WASS.2018.062VA
+1,29,Leray.WASS.2018.062VB,A,E04,UDP0029,GCCGCACTCT,UDP0029,TCCGACCTCG,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,BF3.WASS.2018.062VB
+1,30,Leray.WASS.2018.062VC,A,F04,UDP0030,CCACCAGGCA,UDP0030,CTTATGGAAT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,BF3.WASS.2018.062VC
+1,31,Leray.WASS.2018.070VA,A,G04,UDP0031,GTGACACGCA,UDP0031,GCTTACGGAC,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,BF3.WASS.2018.070VA
+1,32,Leray.WASS.2018.070VB,A,H04,UDP0032,ACAGTGTATG,UDP0032,GAACATACGG,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,BF3.WASS.2018.070VB
+1,33,Leray.WASS.2018.070VC,A,A05,UDP0033,TGATTATACG,UDP0033,GTCGATTACA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,BF3.WASS.2018.070VC
+1,34,Leray.WASS.2018.071VA,A,B05,UDP0034,CAGCCGCGTA,UDP0034,ACTAGCCGTG,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,BF3.WASS.2018.071VA
+1,35,Leray.WASS.2018.071VB,A,C05,UDP0035,GGTAACTCGC,UDP0035,AAGTTGGTGA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,BF3.WASS.2018.071VB
+1,36,Leray.WASS.2018.071VC,A,D05,UDP0036,ACCGGCCGTA,UDP0036,TGGCAATATT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,BF3.WASS.2018.071VC
+1,37,BF3.WASS.2018.062VA,A,E05,UDP0037,TGTAATCGAC,UDP0037,GATCACCGCG,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,Leray.WASS.2018.062VA
+1,38,BF3.WASS.2018.062VB,A,F05,UDP0038,GTGCAGACAG,UDP0038,TACCATCCGT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,Leray.WASS.2018.062VB
+1,39,BF3.WASS.2018.062VC,A,G05,UDP0039,CAATCGGCTG,UDP0039,GCTGTAGGAA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,Leray.WASS.2018.062VC
+1,40,BF3.WASS.2018.070VA,A,H05,UDP0040,TATGTAGTCA,UDP0040,CGCACTAATG,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,Leray.WASS.2018.070VA
+1,41,BF3.WASS.2018.070VB,A,A06,UDP0041,ACTCGGCAAT,UDP0041,GACAACTGAA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,Leray.WASS.2018.070VB
+1,42,BF3.WASS.2018.070VC,A,B06,UDP0042,GTCTAATGGC,UDP0042,AGTGGTCAGG,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,Leray.WASS.2018.070VC
+1,43,BF3.WASS.2018.071VA,A,C06,UDP0043,CCATCTCGCC,UDP0043,TTCTATGGTT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,Leray.WASS.2018.071VA
+1,44,BF3.WASS.2018.071VB,A,D06,UDP0044,CTGCGAGCCA,UDP0044,AATCCGGCCA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,Leray.WASS.2018.071VB
+1,45,BF3.WASS.2018.071VC,A,E06,UDP0045,CGTTATTCTA,UDP0045,CCATAAGGTT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,y,Leray.WASS.2018.071VC
+1,46,LXT.WASS.2018.062VA,A,F06,UDP0046,AGATCCATTA,UDP0046,ATCTCTACCA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,,
+1,47,LXT.WASS.2018.062VB,A,G06,UDP0047,GTCCTGGATA,UDP0047,CGGTGGCGAA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,,
+1,48,LXT.WASS.2018.062VC,A,H06,UDP0048,CAGTGGCACT,UDP0048,TAACAATAGG,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,,
+1,49,LXT.WASS.2018.070VA,A,A07,UDP0049,AGTGTTGCAC,UDP0049,CTGGTACACG,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,,
+1,50,LXT.WASS.2018.070VB,A,B07,UDP0050,GACACCATGT,UDP0050,TCAACGTGTA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,,
+1,51,LXT.WASS.2018.070VC,A,C07,UDP0051,CCTGTCTGTC,UDP0051,ACTGTTGTGA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,,
+1,52,LXT.WASS.2018.071VA,A,D07,UDP0052,TGATGTAAGA,UDP0052,GTGCGTCCTT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,,
+1,53,LXT.WASS.2018.071VB,A,E07,UDP0053,GGAATTGTAA,UDP0053,AGCACATCCT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,,
+1,54,LXT.WASS.2018.071VC,A,F07,UDP0054,GCATAAGCTT,UDP0054,TTCCGTCGCA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2018,,
+1,55,Leray.MARPT_01a,A,G07,UDP0055,CTGAGGAATA,UDP0055,CTTAACCACT,EGC_Diet,Dungeness crab instar diet metabarcoding,y,BF3.MARPT_01a
+1,56,Leray.MARPT_01b,A,H07,UDP0056,AACGCACGAG,UDP0056,GCCTCGGATA,EGC_Diet,Dungeness crab instar diet metabarcoding,y,BF3.MARPT_01b
+1,57,Leray.MARPT_02a,A,A08,UDP0057,TCTATCCTAA,UDP0057,CGTCGACTGG,EGC_Diet,Dungeness crab instar diet metabarcoding,y,BF3.MARPT_02a
+1,58,Leray.MARPT_02b,A,B08,UDP0058,CTCGCTTCGG,UDP0058,TACTAGTCAA,EGC_Diet,Dungeness crab instar diet metabarcoding,y,BF3.MARPT_02b
+1,59,BF3.MARPT_01a,A,C08,UDP0059,CTGTTGGTCC,UDP0059,ATAGACCGTT,EGC_Diet,Dungeness crab instar diet metabarcoding,y,Leray.MARPT_01a
+1,60,BF3.MARPT_01b,A,D08,UDP0060,TTACCTGGAA,UDP0060,ACAGTTCCAG,EGC_Diet,Dungeness crab instar diet metabarcoding,y,Leray.MARPT_01b
+1,61,BF3.MARPT_02a,A,E08,UDP0061,TGGCTAATCA,UDP0061,AGGCATGTAG,EGC_Diet,,y,NA
+1,62,BF3.MARPT_02b,A,F08,UDP0062,AACACTGTTA,UDP0062,GCAAGTCTCA,EGC_Diet,,y,NA
+1,63,Leray.WASS.2020.190a,A,G08,UDP0063,ATTGCGCGGT,UDP0063,TTGGCTCCGC,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,64,Leray.WASS.2020.190b,A,H08,UDP0064,TGGCGCGAAC,UDP0064,AACTGATACT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,65,Leray.WASS.2020.190c,A,A09,UDP0065,TAATGTGTCT,UDP0065,GTAAGGCATA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,66,Leray.WASS.2020.234a,A,B09,UDP0066,ATACCAACGC,UDP0066,AATTGCTGCG,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,67,Leray.WASS.2020.234b,A,C09,UDP0067,AGGATGTGCT,UDP0067,TTACAATTCC,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,68,Leray.WASS.2020.234c,A,D09,UDP0068,CACGGAACAA,UDP0068,AACCTAGCAC,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,69,Leray.WASS.2020.334a,A,E09,UDP0069,TGGAGTACTT,UDP0069,TCTGTGTGGA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,70,Leray.WASS.2020.334b,A,F09,UDP0070,GTATTGACGT,UDP0070,GGAATTCCAA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,71,Leray.WASS.2020.334c,A,G09,UDP0071,CTTGTACACC,UDP0071,AAGCGCGCTT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,72,BF3.WASS.2020.190a,A,H09,UDP0072,ACACAGGTGG,UDP0072,TGAGCGTTGT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,73,BF3.WASS.2020.190b,A,A10,UDP0073,CCTGCGGAAC,UDP0073,ATCATAGGCT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,74,BF3.WASS.2020.190c,A,B10,UDP0074,TTCATAAGGT,UDP0074,TGTTAGAAGG,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,75,BF3.WASS.2020.234a,A,C10,UDP0075,CTCTGCAGCG,UDP0075,GATGGATGTA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,76,BF3.WASS.2020.234b,A,D10,UDP0076,CTGACTCTAC,UDP0076,ACGGCCGTCA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,77,BF3.WASS.2020.234c,A,E10,UDP0077,TCTGGTATCC,UDP0077,CGTTGCTTAC,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,78,BF3.WASS.2020.334a,A,F10,UDP0078,CATTAGTGCG,UDP0078,TGACTACATA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,79,BF3.WASS.2020.334b,A,G10,UDP0079,ACGGTCAGGA,UDP0079,CGGCCTCGTT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,80,BF3.WASS.2020.334c,A,H10,UDP0080,GGCAAGCCAG,UDP0080,CAAGCATCCG,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,81,LXT.WASS.2020.190a,A,A11,UDP0081,TGTCGCTGGT,UDP0081,TCGTCTGACT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,82,LXT.WASS.2020.190b,A,B11,UDP0082,ACCGTTACAA,UDP0082,CTCATAGCGA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,83,LXT.WASS.2020.190c,A,C11,UDP0083,TATGCCTTAC,UDP0083,AGACACATTA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,84,LXT.WASS.2020.234a,A,D11,UDP0084,ACAAGTGGAC,UDP0084,GCGCGATGTT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,85,LXT.WASS.2020.234b,A,E11,UDP0085,TGGTACCTAA,UDP0085,CATGAGTACT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,86,LXT.WASS.2020.234c,A,F11,UDP0086,TTGGAATTCC,UDP0086,ACGTCAATAC,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,87,LXT.WASS.2020.334a,A,G11,UDP0087,CCTCTACATG,UDP0087,GATACCTCCT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,88,LXT.WASS.2020.334b,A,H11,UDP0088,GGAGCGTGTA,UDP0088,ATCCGTAAGT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,89,LXT.WASS.2020.334c,A,A12,UDP0089,GTCCGTAAGC,UDP0089,CGTGTATCTT,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,90,LXT.MARPT_01a,A,B12,UDP0090,ACTTCAAGCG,UDP0090,GAACCATGAA,EGC_Diet,Dungeness crab instar diet metabarcoding,,
+1,91,LXT.MARPT_01b,A,C12,UDP0091,TCAGAAGGCG,UDP0091,GGCCATCATA,EGC_Diet,Dungeness crab instar diet metabarcoding,,
+1,92,LXT.MARPT_02a,A,D12,UDP0092,GCGTTGGTAT,UDP0092,ACATACTTCC,EGC_Diet,Dungeness crab instar diet metabarcoding,,
+1,93,LXT.MARPT_02a,A,E12,UDP0093,ACATATCCAG,UDP0093,TATGTGCAAT,EGC_Diet,Dungeness crab instar diet metabarcoding,,
+1,94,LXT.MARPT_02b,A,F12,UDP0094,TCATAGATTG,UDP0094,GATTAAGGTG,EGC_Diet,Dungeness crab instar diet metabarcoding,,
+1,95,BF3.WASS.2020.190a.25uL,A,G12,UDP0095,GTATTCCACC,UDP0095,ATGTAGACAA,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,96,BF3.WASS.2020.190a.25uL,A,H12,UDP0096,CCTCCGTCCA,UDP0096,CACATCGGTG,EGC_Diet,European green crab diet metabarcoding - Salish Sea 2020,,
+1,97,Leray.PCRNegative,B,A01,UDP0097,TGCCGGTCAG,UDP0097,CCTGATACAA,EGC_Diet,European green crab diet metabarcoding - negative control,BA1,
+1,98,BF3.Kangaroo,B,B01,UDP0098,CACTCAATTC,UDP0098,TTAAGTTGTG,EGC_Diet,European green crab diet metabarcoding - positive control,B1B,
+1,99,LXT.Kangaroo,B,C01,UDP0099,TCTCACACGC,UDP0099,CGGACAGTGA,EGC_Diet,European green crab diet metabarcoding - positive control,B1C,
+1,100,BF3.PCRNegative,B,D01,UDP0100,TCAATGGAGA,UDP0100,GCACTACAAC,EGC_Diet,European green crab diet metabarcoding - negative control,B1D,
+1,101,BF3.SpeedVacNegative,B,E01,UDP0101,ATATGCATGT,UDP0101,TGGTGCCTGG,EGC_Diet,European green crab diet metabarcoding - negative control,B1E,
+1,102,LXT.PCRNegative,B,F01,UDP0102,ATGGCGCCTG,UDP0102,TCCACGGCCT,EGC_Diet,European green crab diet metabarcoding - negative control,B1F,
+1,103,Leray.Kangaroo,B,G01,UDP0103,TCCGTTATGT,UDP0103,TTGTAGTGTA,EGC_Diet,European green crab diet metabarcoding - positive control,BH1,Undetermined

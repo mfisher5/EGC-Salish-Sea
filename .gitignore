@@ -1,7 +1,7 @@
 data/raw/*
 !data/raw/qc/
 !data/primer_sequences.csv
-!data/raw/qc/
+!data/raw/EGC_Diet_Lane1_indexes-Fisher-corrected.csv
 
 data/databases/*
 

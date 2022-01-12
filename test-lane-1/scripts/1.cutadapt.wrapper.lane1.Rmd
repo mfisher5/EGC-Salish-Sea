@@ -94,17 +94,25 @@ rfilenames <- list.files(path = here("data/raw/lane_1/"),
 Grab the sample IDs and sample numbers ("name") from the filenames, arrange them in order of sample number, and combine the datasets.
 ```{r}
 fdat <- data.frame(file1=ffilenames) %>%
+  # create sample name / sample ID from file name, without file suffix
   mutate(sample_name=str_remove(file1,"_L001_R1_001.fastq.gz")) %>%
   separate(col=sample_name, into=c("sample_id","Sample_name"), sep=-2) %>%
+  # clean up sample id and sample name
   mutate(sample_id=str_remove(sample_id,"_S"),
+         sample_id=ifelse(str_sub(sample_id,-1)=="_",str_sub(sample_id,1,-2), sample_id),
+         Sample_name=str_remove(Sample_name,"_S"),
          Sample_name=str_remove(Sample_name,"S")) %>%
   arrange(as.numeric(Sample_name))
 
 
 rdat <- data.frame(file2=rfilenames) %>%
+  # create sample name / sample ID from file name, without file suffix
   mutate(sample_name=str_remove(file2,"_L001_R2_001.fastq.gz")) %>%
   separate(col=sample_name, into=c("sample_id","Sample_name"), sep=-2) %>%
+  # clean up sample id and sample name
   mutate(sample_id=str_remove(sample_id,"_S"),
+         sample_id=ifelse(str_sub(sample_id,-1)=="_",str_sub(sample_id,1,-2), sample_id),
+         Sample_name=str_remove(Sample_name,"_S"),
          Sample_name=str_remove(Sample_name,"S")) %>%
   arrange(as.numeric(Sample_name))
 

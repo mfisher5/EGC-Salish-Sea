@@ -11,7 +11,7 @@
 
 <meta name="author" content="M Fisher, via Eily via Moncho" />
 
-<meta name="date" content="2022-01-07" />
+<meta name="date" content="2022-01-12" />
 
 <title>cutadapt.wrapper</title>
 
@@ -351,7 +351,7 @@ pre code {
 
 <h1 class="title toc-ignore">cutadapt.wrapper</h1>
 <h4 class="author">M Fisher, via Eily via Moncho</h4>
-<h4 class="date">January 07, 2022</h4>
+<h4 class="date">January 12, 2022</h4>
 
 </div>
 
@@ -434,17 +434,25 @@ rfilenames &lt;- list.files(path = here(&quot;data/raw/lane_1/&quot;),
 <p><br></p>
 <p>Grab the sample IDs and sample numbers (“name”) from the filenames, arrange them in order of sample number, and combine the datasets.</p>
 <pre class="r"><code>fdat &lt;- data.frame(file1=ffilenames) %&gt;%
+  # create sample name / sample ID from file name, without file suffix
   mutate(sample_name=str_remove(file1,&quot;_L001_R1_001.fastq.gz&quot;)) %&gt;%
   separate(col=sample_name, into=c(&quot;sample_id&quot;,&quot;Sample_name&quot;), sep=-2) %&gt;%
+  # clean up sample id and sample name
   mutate(sample_id=str_remove(sample_id,&quot;_S&quot;),
+         sample_id=ifelse(str_sub(sample_id,-1)==&quot;_&quot;,str_sub(sample_id,1,-2), sample_id),
+         Sample_name=str_remove(Sample_name,&quot;_S&quot;),
          Sample_name=str_remove(Sample_name,&quot;S&quot;)) %&gt;%
   arrange(as.numeric(Sample_name))
 
 
 rdat &lt;- data.frame(file2=rfilenames) %&gt;%
+  # create sample name / sample ID from file name, without file suffix
   mutate(sample_name=str_remove(file2,&quot;_L001_R2_001.fastq.gz&quot;)) %&gt;%
   separate(col=sample_name, into=c(&quot;sample_id&quot;,&quot;Sample_name&quot;), sep=-2) %&gt;%
+  # clean up sample id and sample name
   mutate(sample_id=str_remove(sample_id,&quot;_S&quot;),
+         sample_id=ifelse(str_sub(sample_id,-1)==&quot;_&quot;,str_sub(sample_id,1,-2), sample_id),
+         Sample_name=str_remove(Sample_name,&quot;_S&quot;),
          Sample_name=str_remove(Sample_name,&quot;S&quot;)) %&gt;%
   arrange(as.numeric(Sample_name))
 
