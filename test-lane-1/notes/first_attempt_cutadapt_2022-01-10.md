@@ -135,5 +135,5 @@ I've renamed the files appropriately, using [rename-demultiplexed-fastqs.sh](htt
 Completed on 2022-01-12.
 
 
-[img-primers-in-folmer-region](https://github.com/mfisher5/EGC-Salish-Sea/blob/master/doc/imgs/Elbrecht-Leese-2017_Fig2_primer-binding-sites-relative-to-COI-Folmer-region.png?raw=true)
+![img-primers-in-folmer-region](https://github.com/mfisher5/EGC-Salish-Sea/blob/master/doc/imgs/Elbrecht-Leese-2017_Fig2_primer-binding-sites-relative-to-COI-Folmer-region.png?raw=true)
 
