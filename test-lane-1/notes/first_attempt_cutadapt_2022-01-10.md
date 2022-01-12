@@ -132,6 +132,8 @@ The target sequence for the BF3/BR2 primer pair includes the Leray / LerayXT for
 
 I've renamed the files appropriately, using [rename-demultiplexed-fastqs.sh](https://github.com/mfisher5/EGC-Salish-Sea/blob/master/test-lane-1/scripts/rename-demultiplexed-fastqs.sh).
 
+Completed on 2022-01-12.
 
-[img-primers-in-folmer-region]()
+
+[img-primers-in-folmer-region](https://github.com/mfisher5/EGC-Salish-Sea/blob/master/doc/imgs/Elbrecht-Leese-2017_Fig2_primer-binding-sites-relative-to-COI-Folmer-region.png?raw=true)
 
