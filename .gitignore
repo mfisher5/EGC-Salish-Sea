@@ -1,9 +1,13 @@
 data/raw/*
 !data/raw/qc/
+!data/primer_sequences.csv
+!data/raw/qc/
 
 data/databases/*
 
 test-lane-1/data/*
 !test-lane-1/data/metadata-cutadapt-input-lane1.csv
+!test-lane-1/data/cutadapt/first_try_misnamed_samples.xlsx
+
 
 R/*.exe
