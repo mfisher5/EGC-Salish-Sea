@@ -1,5 +1,5 @@
 ---
-title: "split_markers.Rmd"
+title: "split.markers"
 author: "Mary Fisher, Eily Allan"
 date: "2022-01-07"
 output: 
@@ -96,16 +96,33 @@ write.csv(cutadapt_output_metadata_LXT, here(split_outdir, "LerayXT", "cutadapt_
 
 ```
 <br>
+<br>
+<br>
 
 
-# Check cutadapt output
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+***SIDEBAR***
 **How do the number of reads / sample change between the raw sequencing data, and the cutadapt-processed data??**
 
 This is the first time I'm running this script, so I'm going to check the cutadapt output with Eily's output, for the samples that were run by both of us. 
 
 Eily's metadata to match sample ids with sample numbers
-```{r message=FALSE}
+```{r eval=FALSE}
 ea_metadat <- read_csv(here("test-lane-1/data", "metadata-input-MF-test_fix.csv")) %>%
   separate(col=file1, into=c("id1","id2"), sep="_S", remove=FALSE)
 
@@ -115,12 +132,12 @@ ea_metadat %<>% mutate(id1=ifelse(id2=="peedVacNegative", "BF3_SpeedVacNegative"
 <br>
 
 the raw sequencing data read counts that I got from the NW Genomics center
-```{r message=FALSE}
+```{r eval=FALSE}
 raw_readdat <- read_csv(here("data/raw/qc","EGC-Salish-Sea_Lane-1_MiSeq-Stats.csv"))
 ```
 <br>
 Join the sample numbers to the raw read depth data
-```{r message=FALSE}
+```{r eval=FALSE}
 raw_readdat %<>% left_join(ea_metadat, by=c("sample"="id1")) %>%
   filter(!is.na(Sample_name))
 ```
@@ -129,7 +146,7 @@ raw_readdat %<>% left_join(ea_metadat, by=c("sample"="id1")) %>%
 
 ## BF3
 
-```{r message=FALSE}
+```{r eval=FALSE}
 bf3_ea_readdat <- read_csv(here("test-lane-1/data/BF3", "ASV_table.csv"))
 
 bf3_ea_readdat %<>% left_join(raw_readdat, by=c("Sample_name", "Locus")) %>%
@@ -139,7 +156,7 @@ bf3_ea_readdat %<>% left_join(raw_readdat, by=c("Sample_name", "Locus")) %>%
 ```
 <br>
 
-```{r echo=FALSE}
+```{r eval=FALSE}
 plotdat <- bf3_ea_readdat %>% pivot_longer(cols=c(raw_reads, cutadapt_reads), names_to="step", values_to="read_count")
 ggplot(plotdat, aes(x=sample,y=read_count, fill=step)) +
   geom_col(position="dodge") +
@@ -150,7 +167,7 @@ ggplot(plotdat, aes(x=sample,y=read_count, fill=step)) +
 
 ## Leray
 
-```{r message=FALSE}
+```{r eval=FALSE}
 l_ea_readdat <- read_csv(here("test-lane-1/data/Leray", "ASV_table.csv"))
 
 l_ea_readdat %<>% left_join(raw_readdat, by=c("Sample_name", "Locus")) %>%
@@ -160,7 +177,7 @@ l_ea_readdat %<>% left_join(raw_readdat, by=c("Sample_name", "Locus")) %>%
 ```
 <br>
 
-```{r echo=FALSE}
+```{r eval=FALSE}
 plotdat <- l_ea_readdat %>% pivot_longer(cols=c(raw_reads, cutadapt_reads), names_to="step", values_to="read_count")
 ggplot(plotdat, aes(x=sample,y=read_count, fill=step)) +
   geom_col(position="dodge") +

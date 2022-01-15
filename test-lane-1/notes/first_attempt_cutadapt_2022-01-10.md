@@ -130,6 +130,8 @@ The second most common sequence here is the most common for BF3_WACO_001a, and t
 
 The target sequence for the BF3/BR2 primer pair includes the Leray / LerayXT forward primer sequence, while the reverse primers for both are in the same location on the Folmer fragment. This means that if a BF3 sample was marked as Leray, `cutadapt` would identify the forward primer but the read would be shorter than the actual target sequence ("Pairs that were too short" would be high). Whereas if a Leray sample was marked as BF3, `cutadapt` would be unable to find the forward primer ("Read 1 with adapter" would be low).
 
+The only sample-index mismatch I can't find evidence of in my lab notebook is the WACO.2021.003 sequenced with BF3, and WACO.2021.001 sequenced with LerayXT. However, these were in the same column for the index PCR reaction, so I guess it's possible that I switched them while setting up the plate. I'll just flag them during downstream analysis. 
+
 I've renamed the files appropriately, using [rename-demultiplexed-fastqs.sh](https://github.com/mfisher5/EGC-Salish-Sea/blob/master/test-lane-1/scripts/rename-demultiplexed-fastqs.sh).
 
 Completed on 2022-01-12.

@@ -189,20 +189,20 @@ bash test-lane-1/scripts/test.bash.sh "C:/Users/mcf05/Documents/PhD/DNA_Metabarc
 
 Run the following in the terminal. This wrapper script will print some parameter values to the terminal (see below) before running the core *cutadapt* script, which is `run.cutadapt.sh`. Note that output from `run.cutadapt.sh` will be saved into a log file, instead of printed to the terminal. 
 ```{bash run_cutadapt, eval=FALSE}
-bash 1_cutadapt_wrapper.sh "C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/cutadapt/params.txt"
+bash test-lane-1/scripts/1_cutadapt_wrapper.sh "C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/cutadapt/params.txt"
 ```
 
-      > /c/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea
-      > fastqfolder,sequencingmetadatafile,outputfolder,minlength
-      > C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/data/raw/lane_1,C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/metadata-cutadapt-input-lane1.csv,C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/cutadapt,100
-      > awk: cmd. line:1: fatal: cannot open file ` ' for reading (No such file or directory)
-      > fastq files will be read in from this folder:
-      > C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/data/raw/lane_1
-      > ---
-      > and trimmed fastq files will be saved into this folder:
-      > C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/cutadapt
-      > ---
-      > ---
-      > now running cutadapt script... output will be saved to a log file.
-      > /c/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/scripts/run.cutadapt.sh: line 12: /c/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/scripts/core/*: No such file or directory
+    >/c/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea
+    >fastqfolder,sequencingmetadatafile,outputfolder,minlength
+    >C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/data/raw/lane_1,C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/metadata-cutadapt-input-lane1.csv,C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/cutadapt,100
+    >awk: cmd. line:1: fatal: cannot open file ` ' for reading (No such file or directory)
+    >fastq files will be read in from this folder:
+    >C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/data/raw/lane_1
+    >---
+    >and trimmed fastq files will be saved into this folder:
+    >C:/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/cutadapt
+    >---
+    >---
+    >now running cutadapt script... output will be saved to a log file.
+    >/c/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/scripts/1.run.cutadapt.sh: line 12:     >/c/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/scripts/core/*: No such file or directory
 

@@ -31,4 +31,4 @@ echo "---"
 echo "now running cutadapt script... output will be saved to a log file."
 
 
-bash /c/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/scripts/1.run.cutadapt.sh "${FASTQFOLDER}" "${METADATA}" "${OUTPUTFOLDER}" "${MINLENGTH}" >> /c/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/cutadapt/log_20220107.txt
+bash /c/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/scripts/1.run.cutadapt.sh "${FASTQFOLDER}" "${METADATA}" "${OUTPUTFOLDER}" "${MINLENGTH}" >> /c/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/cutadapt/log_20220114.txt
