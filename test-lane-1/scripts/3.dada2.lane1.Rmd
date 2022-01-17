@@ -9,8 +9,17 @@ output:
 
 # Description
 
+Run **DADA2** [tutorial here](https://benjjneb.github.io/dada2/tutorial.html) in order to get an amplicon sequence variant (ASV) table, which records the number of times each exact amplicon sequence variant was observed in each sample. 
+
+Certain decisions have to be made throughout the script, so *do not just knit this script with the existing values*. Go through each code chunk in R first, then knit. Certain code chunks will not re-run when the script is knitted, to avoid over-writing existing files.
+
+Input: demultiplexed fastq files, without barcodes / adapters / primers. 
 
 
+
+<br>
+
+# Set up
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -80,7 +89,7 @@ plotQualityProfile(fnRs[c(1,2,6,19,25)])
 ```
 <br>
 
-So the kangaroo, WACO.2021, and WASS.2020 samples look pretty good until ~130bp. The WASS.2018 sample is pretty atrocious, and my baby dungy sample isn't looking much better. Another red flag is how few reads I have left after running `cutadapt`...
+So the kangaroo, WACO.2021, and WASS.2020 samples look pretty good until ~70bp, and just ok until ~110-1200bp. The reverse reads are pretty atrocious, which is not unexpected for Illumina.
 
 ## Filter and trim
 
@@ -95,112 +104,440 @@ names(filtRs) <- sample.names
 
 Filter and trim using `dada2`.
 
-- `truncLen` truncates the sequence length, and should be based on per-base quality scores
+- `truncLen` truncates the sequence length, and should be based on per-base quality scores. I'm using the length that Eily suggested , 120bp.
 - `maxEE` discards reads with high "expected errors" = $\sum(10^{-Q/10})$
 - `rm.phix` removes reads from PhiX spike
 - use `compress` to gzip the output fastqs
 ```{r}
 out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(120,120),
               maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
-              compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
+              compress=TRUE, multithread=FALSE) # On Windows set multithread=FALSE
 head(out)
 ```
 <br> 
 
 Before `dada2` can learn error rates, the files that have 0 reads need to be removed from the file list. 
-```{r}
+```{r eval=FALSE}
 files_to_remove <- as.data.frame(out) %>% 
   rownames_to_column() %>%
-  filter(reads.out==0) %>%
-  mutate(sample_names=str_remove(rowname, paste0("Locus_",marker,"_"))) %>%
-  mutate(sample_names=str_remove(sample_names,paste0("_L001_R1_001.fastq.fastq"))) %>%
-  separate(sample_names, into=c("id","sample_number"), sep=-2, remove=FALSE)
+  filter(reads.out==0)
 
-filtFs <- filtFs[-which(names(filtFs) %in% files_to_remove$sample_names)]
-filtRs <- filtRs[-which(names(filtRs) %in% files_to_remove$sample_names)]
-marker.meta %<>% filter(!(Sample_name %in% files_to_remove$sample_number))
+if(dim(files_to_remove)[1] > 0){
+  files_to_remove %<>%
+    mutate(sample_names=str_remove(rowname, paste0("Locus_",marker,"_"))) %>%
+    mutate(sample_names=str_remove(sample_names,paste0("_L001_R1_001.fastq.fastq"))) %>%
+    separate(sample_names, into=c("id","sample_number"), sep=-2, remove=FALSE)
+  
+  filtFs <- filtFs[-which(names(filtFs) %in% files_to_remove$sample_names)]
+  filtRs <- filtRs[-which(names(filtRs) %in% files_to_remove$sample_names)]
+  marker.meta %<>% filter(!(Sample_name %in% files_to_remove$sample_number))
+  
+} else{message("no files to remove.")}
 ```
+<br>
 
-```{r eval=FALSE}
+Check new distribution of read depth
+```{r echo=FALSE}
+plotdat <- as.data.frame(out) %>%
+  pivot_longer(cols=c("reads.in","reads.out"), values_to="read_depth", names_to="step")
+ggplot(plotdat, aes(x=read_depth/1000,fill=step, alpha=step)) +
+  geom_histogram(binwidth=10) + 
+  scale_alpha_manual(values=c(1.0,0.6)) + 
+  labs(x="read depth (x1K)", y="number of samples") +theme_bw()
+```
+<br>
+
+## Errors
+
+The DADA2 algorithm makes use of a parametric error model (err) and every amplicon dataset has a different set of error rates.
+
+The `learnErrors` function will learn the amplicon-specific error model from the data. 
+
+```{r}
 errF <- learnErrors(filtFs)
 errR <- learnErrors(filtRs)
-plotErrors(errF, nominalQ=TRUE)
+```
+<br>
+```
+101185560 total bases in 843213 reads from 18 samples will be used for learning the error rates.
+101185560 total bases in 843213 reads from 18 samples will be used for learning the error rates.
+```
 
-dadaFs <- dada(filtFs, err=errF, multithread=TRUE)
-dadaRs <- dada(filtRs, err=errR, multithread=TRUE)
+<br>
+
+The DADA2 documentation suggests always visualizing the estimated error rates. Look for: whether the estimated error rates after convergence (black line) are a good fit to the observed error rates (black points). The red line shows the error rates expected under the nominal definition of the Q-score. Generally, error rates should rop with increasing quality scores.
+```{r}
+plotErrors(errF, nominalQ=TRUE)
+```
+<br>
+
+## Sample inference
+
+Apply the core sample inference algorithm to the filtered and trimmed data, using the new error model.
+
+And important note from the DADA2 doc: By default, the dada function processes each sample independently. However, pooling information across samples can increase sensitivity to sequence variants that may be present at very low frequencies in multiple samples. The dada2 package offers two types of pooling. dada(..., pool=TRUE) performs standard pooled processing, in which all samples are pooled together for sample inference. dada(..., pool="pseudo") performs pseudo-pooling, in which samples are processed independently after sharing information between samples, approximating pooled sample inference in linear time.
+
+```{r}
+dadaFs <- dada(filtFs, err=errF)
+dadaRs <- dada(filtRs, err=errR)
 
 # check it 
 dadaFs[[1]]
+```
+<br>
+```
+Sample 1 - 61767 reads in 7287 unique sequences.
+Sample 2 - 57518 reads in 8307 unique sequences.
+Sample 3 - 76468 reads in 11240 unique sequences.
+Sample 4 - 130434 reads in 13499 unique sequences.
+Sample 5 - 24797 reads in 6935 unique sequences.
+Sample 6 - 5453 reads in 1843 unique sequences.
+Sample 7 - 7913 reads in 2071 unique sequences.
+Sample 8 - 8990 reads in 2696 unique sequences.
+Sample 9 - 20266 reads in 5086 unique sequences.
+Sample 10 - 73290 reads in 19424 unique sequences.
+Sample 11 - 50318 reads in 12117 unique sequences.
+Sample 12 - 29925 reads in 7652 unique sequences.
+Sample 13 - 32836 reads in 8349 unique sequences.
+Sample 14 - 54874 reads in 16113 unique sequences.
+Sample 15 - 37618 reads in 9462 unique sequences.
+Sample 16 - 71345 reads in 9526 unique sequences.
+Sample 17 - 49619 reads in 6706 unique sequences.
+Sample 18 - 49782 reads in 5794 unique sequences.
+Sample 19 - 50651 reads in 5586 unique sequences.
+Sample 20 - 20736 reads in 2516 unique sequences.
+Sample 21 - 13788 reads in 1799 unique sequences.
+Sample 22 - 11014 reads in 2118 unique sequences.
+Sample 23 - 31183 reads in 5609 unique sequences.
+Sample 24 - 9081 reads in 1617 unique sequences.
+Sample 25 - 26085 reads in 5443 unique sequences.
+Sample 26 - 99052 reads in 17984 unique sequences.
+Sample 27 - 105056 reads in 21360 unique sequences.
+Sample 28 - 112994 reads in 21243 unique sequences.
+Sample 29 - 43247 reads in 6725 unique sequences.
+Sample 30 - 99637 reads in 25960 unique sequences.
+Sample 31 - 91705 reads in 16585 unique sequences.
+Sample 32 - 105230 reads in 19232 unique sequences.
+Sample 33 - 108891 reads in 17307 unique sequences.
+Sample 34 - 42566 reads in 8759 unique sequences.
 
-# we are going to SKIP merging paired end reads for now because there is no overlap here 
-#mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE)
+Sample 1 - 61767 reads in 40834 unique sequences.
+Sample 2 - 57518 reads in 36384 unique sequences.
+Sample 3 - 76468 reads in 49900 unique sequences.
+Sample 4 - 130434 reads in 85500 unique sequences.
+Sample 5 - 24797 reads in 14839 unique sequences.
+Sample 6 - 5453 reads in 3884 unique sequences.
+Sample 7 - 7913 reads in 5742 unique sequences.
+Sample 8 - 8990 reads in 6423 unique sequences.
+Sample 9 - 20266 reads in 14224 unique sequences.
+Sample 10 - 73290 reads in 44423 unique sequences.
+Sample 11 - 50318 reads in 32688 unique sequences.
+Sample 12 - 29925 reads in 18943 unique sequences.
+Sample 13 - 32836 reads in 22420 unique sequences.
+Sample 14 - 54874 reads in 38493 unique sequences.
+Sample 15 - 37618 reads in 25526 unique sequences.
+Sample 16 - 71345 reads in 43542 unique sequences.
+Sample 17 - 49619 reads in 31302 unique sequences.
+Sample 18 - 49782 reads in 31906 unique sequences.
+Sample 19 - 50651 reads in 30436 unique sequences.
+Sample 20 - 20736 reads in 12730 unique sequences.
+Sample 21 - 13788 reads in 8967 unique sequences.
+Sample 22 - 11014 reads in 7430 unique sequences.
+Sample 23 - 31183 reads in 19382 unique sequences.
+Sample 24 - 9081 reads in 6280 unique sequences.
+Sample 25 - 26085 reads in 17790 unique sequences.
+Sample 26 - 99052 reads in 67343 unique sequences.
+Sample 27 - 105056 reads in 65908 unique sequences.
+Sample 28 - 112994 reads in 70776 unique sequences.
+Sample 29 - 43247 reads in 28329 unique sequences.
+Sample 30 - 99637 reads in 61998 unique sequences.
+Sample 31 - 91705 reads in 54511 unique sequences.
+Sample 32 - 105230 reads in 64802 unique sequences.
+Sample 33 - 108891 reads in 71603 unique sequences.
+Sample 34 - 42566 reads in 30368 unique sequences.
 
-# there is another term to do this so we have it formatted right to not merge them
+dada-class: object describing DADA2 denoising results
+9 sequence variants were inferred from 7287 input unique sequences.
+Key parameters: OMEGA_A = 1e-40, OMEGA_C = 1e-40, BAND_SIZE = 16
+```
+<br>
+
+
+## Complete pipeline: Merged Reads
+
+For lane one, I want to skip merging the paired end reads because there is no overlap. Instead, by using the `justConcatenate` argument, DADA2 will stick the paired end reads together and separate them with 10  "N"s. When working with overlapping paired end data, just set this argument to FALSE.
+```{r}
 mergers <- mergePairs(dadaFs, filtFs, dadaRs, filtRs, verbose=TRUE, justConcatenate = TRUE)
 ## Inspect the merger data.frame from the first sample
 head(mergers[[1]])
 ```
-***Error in derepFastq(fls[[i]], qualityType = qualityType) : Not all provided files exist.***
+<br>
 
+### Construct sequence table
 
+The sequence table is a matrix with rows corresponding to (and named by) the samples, and columns corresponding to (and named by) the sequence variants. 
 
-```{r make sequence table, eval=FALSE}
+```{r}
 seqtab <- makeSequenceTable(mergers)
 dim(seqtab)
+```
+<br>
 
-# Inspect distribution of sequence lengths
+Inspect distribution of sequence lengths:
+```{r echo=FALSE}
 table(nchar(getSequences(seqtab)))
-# so here all of our sequences are 250 bp in length 
+```
+so here all of our sequences are 250 bp in length (120bp + 10N + 120bp)
+<br>
 
-# remove chimeras 
-seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", multithread=TRUE, verbose=TRUE)
+### Remove chimeras
+
+```{r}
+seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", verbose=TRUE)
 dim(seqtab.nochim)
-# check percentage of reads remaining after chimera removal (should be high)
+```
+
+
+Check the percentage of reads remaining after chimera removal (should be high -- 94.96%). from DADA2 doc: If most of your reads were removed as chimeric, upstream processing may need to be revisited. In almost all cases this is caused by primer sequences with ambiguous nucleotides that were not removed prior to beginning the DADA2 pipeline.
+```{r}
 sum(seqtab.nochim)/sum(seqtab)
 seqtab.nochim.df <- as.data.frame(seqtab.nochim)
+```
+<br>
 
-
-# track through pipeline
+### Check the pipeline: track reads.
+```{r}
 getN <- function(x) sum(getUniques(x))
 track <- cbind(out, sapply(dadaFs, getN), sapply(dadaRs, getN), sapply(mergers, getN), rowSums(seqtab.nochim))
-# If processing a single sample, remove the sapply calls: e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
-#track <- cbind(out, getN(dadaFs), getN(dadaRs), getN(mergers), rowSums(seqtab.nochim))
 colnames(track) <- c("input", "filtered", "denoisedF", "denoisedR", "merged", "nonchim")
 rownames(track) <- sample.names
 head(track)
-
 ```
+<br>
 
-```{r setting up output files, eval=FALSE}
+```{r echo=FALSE}
+plotdat <- as.data.frame(track) %>%
+  rownames_to_column() %>%
+  mutate(rowname=str_remove(rowname,"BF3_")) %>%
+  pivot_longer(cols=seq(2,7), names_to="step",values_to="read_depth")
+plotdat$step=factor(plotdat$step, levels=c("input","filtered","denoisedF","denoisedR","merged","nonchim"))
 
-# Set up output files 
-output.dir <- "/Users/elizabethandruszkiewicz/GoogleDrive/UW/GitHub/NextGenNEPA_EA/Output/dada2_output/MFtest/LerayXT"
-conv_file <- file.path(output.dir,"F_only_hash_key.csv")
-conv_file.fasta <- file.path(output.dir,"F_only_hash_key.fasta")
-ASV_file <-  file.path(output.dir,"F_only_ASV_table.csv")
-print (conv_file)
-print (conv_file.fasta)
-print(ASV_file)
+ggplot(plotdat,aes(x=rowname,y=read_depth/1000,fill=step)) +
+  geom_col(position="dodge") +
+  labs(title="BF3/BR2",y="read depth (x1k)", x="sample") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
 
-# actually write output
+```{r eval=FALSE, include=FALSE}
+# If processing a single sample, remove the sapply calls: e.g. replace sapply(dadaFs, getN) with getN(dadaFs)
+track <- cbind(out, getN(dadaFs), getN(dadaRs), getN(mergers), rowSums(seqtab.nochim))
+```
+<br>
+
+
+### Write out ASV table
+
+The ASV table will be saved into a CSV (two columns, a hash # and a sequence) as well as a fasta file.
+```{r}
 conv_table <- tibble( Hash = "", Sequence ="")
 Hashes <- map_chr (colnames(seqtab.nochim.df), ~ digest(.x, algo = "sha1", serialize = F, skip = "auto")) 
 conv_table <- tibble (Hash = Hashes,
                       Sequence = colnames(seqtab.nochim.df))
 
 colnames(seqtab.nochim.df) <- Hashes
-write_csv(conv_table, conv_file) # write the table into a file
-write.fasta(sequences = as.list(conv_table$Sequence),
-            names     = as.list(conv_table$Hash),
-            file.out = conv_file.fasta)
-seqtab.nochim.df <- bind_cols(sample.metadata %>%
+```
+<br>
+
+My forward / reverse sequences are actually **73bp** apart (313bp target, with 120bp sequence on either end). So I need to add in more "N"s before writing out the sequence information. 
+```{r}
+conv_table_edit <- conv_table %>%
+  separate(col="Sequence",into=c("SequenceF","SequenceR"), sep="NNNNNNNNNN") %>%
+  unite(col="Sequence", SequenceF:SequenceR, sep=paste(rep("N",73),collapse=""))
+```
+<br>
+
+Make sure this didn't cut off any part of the sequence by checking a row / dimensions:
+```{r}
+(nchar(paste0(conv_table[1,2])) + 63) == nchar(paste0(conv_table_edit[1,2]))
+```
+```{r eval=FALSE, include=FALSE}
+paste0(conv_table[1,2])
+paste0(conv_table_edit[1,2])
+```
+<br>
+
+
+```{r bf3 output, eval=FALSE}
+dir.create(here(outdir,marker))
+# write the table into a file
+write_csv(conv_table_edit, here(outdir,marker,"merged_hash_key.csv")) 
+# write the associated sequences into a fasta file
+write.fasta(sequences = as.list(conv_table_edit$Sequence),
+            names     = as.list(conv_table_edit$Hash),
+            file.out  = here(outdir,marker,"merged_hash_key.fasta"))
+```
+<br>
+
+The second output will have the number of reads per sequence (referenced using the hash code), for each sample.
+```{r}
+seqtab.nochim.df <- bind_cols(marker.meta %>%
                                 select(Sample_name, Locus),
                               seqtab.nochim.df)
-current_asv <- 
-  seqtab.nochim.df %>%
+current_asv <- seqtab.nochim.df %>%
   pivot_longer(cols = c(- Sample_name, - Locus),
                names_to = "Hash",
                values_to = "nReads") %>%
   filter(nReads > 0) 
-write_csv(current_asv, ASV_file)
 ```
+```{r bf3 output2, eval=FALSE}
+write_csv(current_asv, here(outdir,marker,"merged_ASV_table.csv"))
+```
+<br>
+
+## Complete pipeline: Forward Reads
+
+### Construct sequence table
+
+The sequence table is a matrix with rows corresponding to (and named by) the samples, and columns corresponding to (and named by) the sequence variants. 
+
+```{r}
+seqtab.f <- makeSequenceTable(dadaFs)
+dim(seqtab.f)
+```
+<br>
+
+Inspect distribution of sequence lengths:
+```{r echo=FALSE}
+table(nchar(getSequences(seqtab.f)))
+```
+forward sequences are 120 bp in length.
+<br>
+
+### Remove chimeras
+
+```{r}
+seqtab.nochim.f <- removeBimeraDenovo(seqtab.f, method="consensus", verbose=TRUE)
+dim(seqtab.nochim.f)
+```
+
+
+Check the percentage of reads remaining after chimera removal (should be high -- 98.81%). from DADA2 doc: If most of your reads were removed as chimeric, upstream processing may need to be revisited. In almost all cases this is caused by primer sequences with ambiguous nucleotides that were not removed prior to beginning the DADA2 pipeline.
+```{r}
+sum(seqtab.nochim.f)/sum(seqtab.f)
+seqtab.nochim.f.df <- as.data.frame(seqtab.nochim.f)
+```
+<br>
+
+
+### Write out ASV table
+
+The ASV table will be saved into a CSV (two columns, a hash # and a sequence) as well as a fasta file.
+```{r}
+conv_table_f <- tibble( Hash = "", Sequence ="")
+Hashes <- map_chr (colnames(seqtab.nochim.f.df), ~ digest(.x, algo = "sha1", serialize = F, skip = "auto")) 
+conv_table_f <- tibble (Hash = Hashes,
+                      Sequence = colnames(seqtab.nochim.f.df))
+
+colnames(seqtab.nochim.f.df) <- Hashes
+```
+```{r bf3 forward output, eval=FALSE}
+# write the table into a file
+write_csv(conv_table_f, here(outdir,marker,"F_hash_key.csv")) 
+# write the associated sequences into a fasta file
+write.fasta(sequences = as.list(conv_table_f$Sequence),
+            names     = as.list(conv_table_f$Hash),
+            file.out  = here(outdir,marker,"F_hash_key.fasta"))
+```
+<br>
+
+The second output will have the number of reads per sequence (referenced using the hash code), for each sample.
+```{r}
+seqtab.nochim.f.df <- bind_cols(marker.meta %>%
+                                select(Sample_name, Locus),
+                              seqtab.nochim.f.df)
+current_asv_f <- seqtab.nochim.f.df %>%
+  pivot_longer(cols = c(- Sample_name, - Locus),
+               names_to = "Hash",
+               values_to = "nReads") %>%
+  filter(nReads > 0) 
+```
+```{r bf3 output2, eval=FALSE}
+write_csv(current_asv_f, here(outdir,marker,"F_ASV_table.csv"))
+```
+<br>
+
+## Complete pipeline: Reverse Reads
+
+### Construct sequence table
+
+The sequence table is a matrix with rows corresponding to (and named by) the samples, and columns corresponding to (and named by) the sequence variants. 
+
+```{r}
+seqtab.r <- makeSequenceTable(dadaRs)
+dim(seqtab.r)
+```
+<br>
+
+Inspect distribution of sequence lengths:
+```{r echo=FALSE}
+table(nchar(getSequences(seqtab.r)))
+```
+forward sequences are 120 bp in length.
+<br>
+
+### Remove chimeras
+
+```{r}
+seqtab.nochim.r <- removeBimeraDenovo(seqtab.r, method="consensus", verbose=TRUE)
+dim(seqtab.nochim.r)
+```
+
+
+Check the percentage of reads remaining after chimera removal (should be high -- 98.51%). from DADA2 doc: If most of your reads were removed as chimeric, upstream processing may need to be revisited. In almost all cases this is caused by primer sequences with ambiguous nucleotides that were not removed prior to beginning the DADA2 pipeline.
+```{r}
+sum(seqtab.nochim.r)/sum(seqtab.r)
+seqtab.nochim.r.df <- as.data.frame(seqtab.nochim.r)
+```
+<br>
+
+
+### Write out ASV table
+
+The ASV table will be saved into a CSV (two columns, a hash # and a sequence) as well as a fasta file.
+```{r}
+conv_table_r <- tibble( Hash = "", Sequence ="")
+Hashes <- map_chr (colnames(seqtab.nochim.r.df), ~ digest(.x, algo = "sha1", serialize = F, skip = "auto")) 
+conv_table_r <- tibble (Hash = Hashes,
+                      Sequence = colnames(seqtab.nochim.r.df))
+
+colnames(seqtab.nochim.r.df) <- Hashes
+```
+```{r bf3 forward output, eval=FALSE}
+# write the table into a file
+write_csv(conv_table_r, here(outdir,marker,"R_hash_key.csv")) 
+# write the associated sequences into a fasta file
+write.fasta(sequences = as.list(conv_table_r$Sequence),
+            names     = as.list(conv_table_r$Hash),
+            file.out  = here(outdir,marker,"R_hash_key.fasta"))
+```
+<br>
+
+The second output will have the number of reads per sequence (referenced using the hash code), for each sample.
+```{r}
+seqtab.nochim.r.df <- bind_cols(marker.meta %>%
+                                select(Sample_name, Locus),
+                              seqtab.nochim.r.df)
+current_asv_r <- seqtab.nochim.r.df %>%
+  pivot_longer(cols = c(- Sample_name, - Locus),
+               names_to = "Hash",
+               values_to = "nReads") %>%
+  filter(nReads > 0) 
+```
+```{r bf3 output2, eval=FALSE}
+write_csv(current_asv_r, here(outdir,marker,"R_ASV_table.csv"))
+```
+<br>
+<br>
+<br>
+

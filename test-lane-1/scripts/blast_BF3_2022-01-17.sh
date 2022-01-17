@@ -17,9 +17,9 @@ CULLING="5"
 	################################################################################
 	echo $(date +%H:%M) "BLASTing..."
 
-	blast_output="/mnt/nfs/home/rpkelly/processed/run2.COI.hashes.to.blast.txt" 
+	blast_output="/mnt/nfs/home/rpkelly/processed/mf.lane1.bf3.merged.hashes.to.blast.txt" 
 	blastn \
-		-query "/c/Users/mcf05/Documents/PhD/DNA_Metabarcoding/GreenCrab/EGC-Salish-Sea/test-lane-1/data/BF3/hash_key.fasta
+		-query "/mnt/nfs/home/rpkelly/raw/mf_merged_hash_key.fasta
 " \
 		-db "${BLAST_DB}" \
 		-num_threads 16 \
@@ -34,9 +34,25 @@ CULLING="5"
 
 	echo $(date +%H:%M) "BLASTing second batch..."
 
-	blast_output="/mnt/nfs/home/rpkelly/processed/run2.COI.hashes.to.blast2.txt" 
+	blast_output="/mnt/nfs/home/rpkelly/processed/mf.lane1.bf3.forward.hashes.to.blast.txt" 
 	blastn \
-		-query "/mnt/nfs/home/rpkelly/raw/run2.COI.hashes.to.blast2.fasta" \
+		-query "/mnt/nfs/home/rpkelly/raw/mf_F_hash_key.fasta" \
+		-db "${BLAST_DB}" \
+		-num_threads 16 \
+		-perc_identity "${PERCENT_IDENTITY}" \
+		-word_size "${WORD_SIZE}" \
+		-evalue "${EVALUE}" \
+		-max_target_seqs "${MAXIMUM_MATCHES}" \
+		-culling_limit="${CULLING}" \
+		-outfmt "6 qseqid sseqid sacc pident length mismatch gapopen qcovus qstart qend sstart send evalue bitscore staxids qlen sscinames sseq" \
+		-out "${blast_output}"
+		
+		
+echo $(date +%H:%M) "BLASTing final batch..."
+
+	blast_output="/mnt/nfs/home/rpkelly/processed/mf.lane1.bf3.reverse.hashes.to.blast.txt" 
+	blastn \
+		-query "/mnt/nfs/home/rpkelly/raw/mf_R_hash_key.fasta" \
 		-db "${BLAST_DB}" \
 		-num_threads 16 \
 		-perc_identity "${PERCENT_IDENTITY}" \
