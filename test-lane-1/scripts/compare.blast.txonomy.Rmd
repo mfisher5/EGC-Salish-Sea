@@ -1,0 +1,64 @@
+---
+title: 'Compare BLAST Taxonomy: COI Markers'
+author: "Mary Fisher"
+date: "1/26/2022"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+# Description
+
+Compare taxonomic assignments across 
+
+1. COI Markers: BF3/BR2 (target: 418bp), Leray (target: 313bp), LerayXT.
+
+2. Merged v. forward v. reverse sequences (sequencing was completed as PE 150)
+
+
+
+# Set up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<br>
+
+This script requires the following packages:
+```{r message=FALSE, warning=FALSE}
+library(here)
+library(tidyverse)
+library(magrittr)
+library(cowplot)
+```
+<br>
+
+User directories
+```{r}
+indir_blast  <- 'test-lane-1/data/blast'
+indir_asv    <- 'test-lane-1/data/dada2'
+indir_meta   <- 'test-lane-1/data/cutadapt'
+outdir       <- 'test-lane-1/results'
+```
+<br>
+
+Which markers are being analyzed?
+```{r}
+marker <- 'BF3'
+```
+<br>
+
+What are the names of the processed blast file with taxonomy from script 6?
+```{r}
+# hashes with unique staxids
+infile1 <- 'lane1_bf3_blast_uniqueIDs_taxonomy.csv'
+
+# hashes with multiple IDs, that required the LCA function
+infile2 <- 'lane1_bf3_blast_multipleIDs_taxonomy.csv'
+```
+<br>
+<br>
+
+
+# Data

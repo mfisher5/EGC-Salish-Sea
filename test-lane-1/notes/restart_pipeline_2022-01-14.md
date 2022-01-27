@@ -21,10 +21,12 @@ Lerays: Jan 21
 
 #### Blast
 
-Ryan ran the BF3 blast scripts for me on Jan 18
+Ryan ran the blast scripts for me on Hyak: BF3 on Jan 18, Leray / LerayXT on Jan 26
 
 
 #### Troubleshooting with Eily, 2022-01-25
+
+**1. Hashes that don't match to BLAST**
 
 There are a number of hashes (or `qseqids`) in the BF3/BR2 ASV table which don't match to any of the processed blast results. For example: 
 
@@ -45,11 +47,27 @@ Another example:
 
 Samples 40,41,78,79 (WASS_2018_070a/b, WASS_2020_334b/c) have 12, 122, 2392, and 8148 reads of this sequence. Again, missing from the raw blast results and an online search returns the error *"No significant similarity found"*.
 
+*Answer: for eDNA, the proportion missing reads looks ok! this might go down when I get sequencing results of the correct length*
+<br> 
 
-Some additional asks from Eily: 
-- code to compare replicates
-- other QC code?
-- code to calculate eDNA Index
+**2. Code for comparing replicates?**
+
+Use the code at https://github.com/jdduprey/PCR.variation ([COMM_level/comm_var_braycurtis.Rmd](https://github.com/jdduprey/PCR.variation/tree/main/code/COMM_level) is the most up to date).
+
+When comparing replicates, pull only the top 100 ASVs (by % reads). you *don't* want the rare ASVs driving the differences between technical replicates. Key Question: How many ASVs are found in all three replicates? just two? just one?
+<br>
+
+**3. Low taxonomic diversity in prey taxa for the BF3 primer**
+
+This could be a function of the primer amplification efficiency, or it could be a result of having short sequences (maybe the start of the crab COI is variable enough to distinguish crab species, but clam COI is not and is getting lost as no match).
+
+A few options for exploring this would be to : 
+
+1. Identify prey that we expected to see in the EGC samples, get the sequence for the target fragment of those prey, and manually search through the fasta file with the ASV sequences to see if there are any similar sequences.
+
+2. Use Geneious to look at how similar the target fragments are between crab species. Could also do something similar to look at bivalves and other species we expected to see.  
+
+Would also be worth checking Cordone et al. to see if they identified bivalves in their crab.
 
 
 

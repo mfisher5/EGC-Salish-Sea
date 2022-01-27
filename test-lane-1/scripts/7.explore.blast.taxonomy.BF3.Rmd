@@ -1,0 +1,521 @@
+---
+title: "explore.taxonomy.BF3"
+author: "M Fisher"
+date: "1/21/2021"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+# Description
+
+Explorative plots looking at taxonomic assignments from **BF3** sequences.
+
+
+# Set up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<br>
+
+This script requires the following packages:
+```{r message=FALSE, warning=FALSE}
+library(here)
+library(tidyverse)
+library(magrittr)
+library(cowplot)
+```
+<br>
+
+User directories
+```{r}
+indir_blast  <- 'test-lane-1/data/blast'
+indir_asv    <- 'test-lane-1/data/dada2/BF3'
+indir_meta   <- 'test-lane-1/data/cutadapt/BF3'
+outdir       <- 'test-lane-1/results'
+```
+<br>
+
+Which marker is being analyzed?
+```{r}
+marker <- 'BF3'
+```
+<br>
+
+What are the names of the processed blast file with taxonomy from script 6?
+```{r}
+# hashes with unique staxids
+infile1 <- 'lane1_bf3_blast_uniqueIDs_taxonomy.csv'
+
+# hashes with multiple IDs, that required the LCA function
+infile2 <- 'lane1_bf3_blast_multipleIDs_taxonomy.csv'
+```
+<br>
+<br>
+
+
+# Data
+
+Taxonomy from script `6.parse.blast.results`
+```{r}
+tax_key <- read_csv(here(indir_blast, infile2)) %>%
+  rename("Hash"=representative)
+
+tax_key %<>% bind_rows(read_csv(here(indir_blast, infile1)) %>%
+              rename("Hash"=qseqid) %>%
+                mutate(taxID="unique", score="unique") %>%
+              dplyr::select(all_of(colnames(tax_key))))
+```
+<br>
+
+
+Sequencing sample metadata, so that we can connect sample name (actually a number; in the ASV table) to sample ID.
+```{r}
+metadat <- read_csv(here(indir_meta, paste0('cutadapt_output_metadata_',marker,'.csv')))
+
+metadat %<>% dplyr::select(Sample_name, file1) %>%
+  mutate(SampleID=str_remove(file1,"_L001_R1_001.fastq.fastq")) %>%
+  mutate(SampleID=str_remove(SampleID,paste0("Locus_",marker,"_",marker,"_"))) %>%
+  mutate(SampleID=str_sub(SampleID,start=1, end=-5)) %>%
+  mutate(Group=ifelse(SampleID %in% c("Kangaroo","PCRNegative","SpeedVacNegative"), "Control", str_sub(SampleID, start=1,end=4))) %>%
+  mutate(Group=ifelse(Group!="WASS",Group,ifelse(grepl("2020",SampleID),"WASS 2020", "WASS 2018"))) %>%
+  dplyr::select(-file1)
+```
+<br>
+
+### merged
+
+ASV table
+```{r}
+mdat <- read_csv(here(indir_asv, 'merged_ASV_table.csv')) %>%
+  mutate(dataset="merged")
+```
+<br>
+
+Join the sample metadata to the ASV dataframe
+```{r}
+mdat %<>% left_join(metadat,by="Sample_name")
+```
+<br>
+
+Join the taxonomic key to the ASV dataframe
+```{r}
+mdat %<>% left_join(filter(tax_key, dataset=="merged"),by=c("Hash","dataset"))
+```
+<br>
+
+### forward
+
+ASV table
+```{r}
+fdat <- read_csv(here(indir_asv, 'F_ASV_table.csv')) %>%
+  mutate(dataset="forward")
+```
+<br>
+
+Join the sample metadata to the ASV dataframe
+```{r}
+fdat %<>% left_join(metadat,by="Sample_name")
+```
+<br>
+
+Join the taxonomic key to the ASV dataframe
+```{r}
+fdat %<>% left_join(filter(tax_key, dataset=="forward"),by=c("Hash","dataset"))
+```
+<br>
+
+
+### reverse
+
+ASV table
+```{r}
+rdat <- read_csv(here(indir_asv, 'R_ASV_table.csv')) %>%
+  mutate(dataset="reverse")
+```
+<br>
+
+Join the sample metadata to the ASV dataframe
+```{r}
+rdat %<>% left_join(metadat,by="Sample_name")
+```
+<br>
+
+Join the taxonomic key to the ASV dataframe
+```{r}
+rdat %<>% left_join(filter(tax_key, dataset=="reverse"),by=c("Hash","dataset"))
+```
+<br>
+
+
+### combine & quality check
+
+
+```{r}
+dat <- bind_rows(mdat,rdat,fdat)
+```
+<br>
+
+
+
+**1.** Make sure that each hash has only one set of taxonomic information
+```{r}
+checkdat <- dat %>% 
+  group_by(Sample_name,Hash,dataset) %>%
+  summarise(count=n(), .groups="drop") %>%
+  filter(count > 1)
+checkdat
+```
+<br>
+
+It looks like all of those with a '2' count have matching taxonomy between the two unique IDs, but one row of taxonomic info is more fine-scale than the other. Save only the most specific taxonomic info.
+```{r}
+## rows to remove have the most NAs
+checkdat %<>% left_join(dat,by=c("Sample_name","Hash","dataset")) %>%
+  arrange(desc(rowSums(is.na(.)))) %>%
+  distinct(Sample_name,dataset, .keep_all = TRUE)
+
+## remove those rows
+dat %<>% anti_join(checkdat, by=c("Sample_name","Hash", "dataset","rank", "taxon"))
+
+rm(checkdat)
+```
+<br>
+
+```{r}
+dat %>% 
+  group_by(Sample_name,Hash,dataset) %>%
+  summarise(count=n(), .groups="drop") %>%
+  filter(count > 1)
+```
+<br>
+
+**2.** Find the number of hashes with missing taxonomic information
+```{r echo=FALSE, fig.width=10}
+## total hashes / reads
+hcount <- dat %>%
+  group_by(Sample_name,Group,SampleID, dataset) %>%
+  summarise(total_hashes=n(),
+            total_reads=sum(nReads),.groups="drop")
+
+## proportion of hashes / reads missing taxonomy
+checkdat <- dat %>%
+  filter(is.na(rank)) %>%
+  group_by(Sample_name,Group,SampleID, dataset) %>%
+  summarise(nhash=n(),
+            nreads=sum(nReads),.groups="drop") %>%
+  left_join(hcount,by=c("Sample_name","Group","SampleID","dataset")) %>%
+  mutate(hashes_na=nhash/total_hashes,
+         reads_na=nreads/total_reads) %>%
+    pivot_longer(cols=c(hashes_na, reads_na), names_to="metric")
+checkdat$dataset <- factor(checkdat$dataset,levels=c("forward","reverse","merged"))
+
+ggplot(checkdat, aes(x=as.character(SampleID),y=value, fill=dataset)) +
+  geom_col(position="dodge") +
+  facet_grid(col=vars(Group), row=vars(metric), scales="free") +
+  scale_y_continuous(limits=c(0,1)) +
+  scale_fill_manual(values=c("#a6cee3","#1f78b4","#b2df8a")) +
+  xlab("Sample ID") + ylab("Proportion w/o Taxonomy") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5),
+                     legend.position="top")
+```
+<br>
+Forward reads tend to have fewer successful taxonomic IDs, except for several technical replicates for one WACO 2021 crab / two Dungies / one WASS 2020 crab. Merged reads tend to have the most successful taxonomic IDs.
+Across all crab, there are a very high proportion of hashes that aren't successfully assigned a taxonomy, but usuall <= 25% of reads. I have a feeling that's because a large number of reads come from very few hashes -- especially hashes that come from predator DNA.
+<br>
+
+# Ratios
+
+A quick look at the proportion of reads belonging to each taxa, for every sample. 
+```{r}
+# don't want NAs showing up in the plots
+dat2 <- filter(dat, !is.na(rank))
+```
+<br>
+
+## Controls
+
+What DNA did we pick up in the controls?
+
+```{r}
+control_dat <- dat2 %>% filter(Group=="Control")
+```
+<br>
+
+```{r echo=FALSE}
+control_dat$dataset <- factor(control_dat$dataset,levels=c("forward","reverse","merged"))
+ggplot(data=control_dat, aes(x=dataset, y=nReads, fill=phylum)) +
+  geom_col() +
+  facet_wrap(~SampleID) +
+  theme_bw() + ggtitle("Phyla")
+```
+<br>
+
+```{r echo=FALSE, fig.width=13, fig.height=6}
+ggplot(data=control_dat, aes(x=dataset, y=nReads, fill=taxon)) +
+  geom_col() +
+   facet_wrap(~SampleID) +
+  ggtitle("Taxa") +
+  theme_bw() + theme(legend.position = "bottom")
+```
+<br>
+
+It looks like the green crab DNA got...everywhere. The rest is mostly bacteria. The weirdest thing is that there isn't any kangaroo DNA in the positive control??
+
+Algae species in the negative controls:
+
+1. *Planosiphon gracilis*, a brown algae
+
+2. *Pseudoralfsia verrucosa*, a brown algae
+
+
+
+Algae species only in the kangaroo:
+
+1. 68 reads of *Bangiophyceae* (class; phylum=Rhodophyta), a red algae, in kangaroo
+
+
+Get a list of taxa from the negative controls, to remove from the samples:
+```{r}
+taxa_to_remove <- control_dat %>%
+  filter(SampleID %in% c("PCRNegative","SpeedVacNegative")) %>%
+  filter(!(taxon %in% c("Carcinus maenas","Carcinus aestuarii"))) %>%
+  pull(taxon)
+```
+
+<br>
+<br>
+
+## Predator v Prey
+
+How much predator DNA did we pick up, from each sample? 
+
+First, get total reads per sample so that we can calculate proportion of reads per taxon.
+```{r}
+total_reads_per_sample <- dat2 %>%
+  group_by(Group,SampleID,dataset) %>%
+  summarise(total_reads=sum(nReads), .groups="drop")
+```
+<br>
+
+### Green Crab
+```{r}
+egc_dat <- dat2 %>%
+  filter(Group %in% c("WACO","WASS 2020", "WASS 2018")) %>%
+  # remove all taxa in the negative controls, except green crab
+  filter(!(taxon %in% taxa_to_remove))
+
+egc_pred <- egc_dat %>%
+  mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii",1,0)) %>%
+  group_by(Group,SampleID,dataset,Predator) %>%
+  summarise(sumReads=sum(nReads)) %>%
+  left_join(total_reads_per_sample,by=c("Group","SampleID","dataset")) %>%
+  mutate(pReads=sumReads/total_reads)
+```
+<br>
+
+```{r echo=FALSE}
+egc_pred$dataset <- factor(egc_pred$dataset,levels=c("forward","reverse","merged"))
+ggplot(egc_pred, aes(x=SampleID, y=pReads, fill=as.factor(Predator))) +
+  geom_col() +
+  facet_grid(col=vars(Group), row=vars(dataset), scales="free") +
+  scale_fill_manual(values=c("lightblue","red"), name="Predator") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+
+### Dungies
+```{r}
+dungy_dat <- dat2 %>%
+  filter(Group=="MARP") %>%
+  filter(!(taxon %in% taxa_to_remove))
+
+dungy_pred <- dungy_dat %>%
+  mutate(Predator=ifelse(taxon == "Metacarcinus magister",1,0)) %>%
+  group_by(Group,SampleID,dataset,Predator) %>%
+  summarise(sumReads=sum(nReads)) %>%
+  left_join(total_reads_per_sample,by=c("Group","SampleID","dataset")) %>%
+  mutate(pReads=sumReads/total_reads)
+```
+<br>
+
+```{r echo=FALSE}
+ggplot(dungy_pred, aes(x=SampleID, y=pReads, fill=as.factor(Predator))) +
+  geom_col() +
+  facet_wrap(~dataset) +
+  scale_fill_manual(values=c("lightblue","red"), name="Predator") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+## Diet Composition
+
+### Green Crab
+
+Remove predator DNA, and bacteria that weren't captured in the negative controls. then recalculate total reads.
+```{r}
+egc_prey <- egc_dat %>%
+  mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii",1,0)) %>%
+  filter(Predator==0) %>%
+  filter(!(phylum %in% c("Actinobacteria","Bacteroidetes","Planctomycetes","Proteobacteria")))
+
+
+egc_prey_total_reads <- egc_prey %>%
+  group_by(Group,SampleID,dataset) %>%
+  summarise(total_reads=sum(nReads))
+```
+```{r echo=FALSE, fig.width=10, fig.height=6}
+plotdat <-  egc_prey %>%
+  group_by(Group,SampleID,dataset,phylum) %>%
+  summarise(sumReads=sum(nReads), .groups="drop") %>%
+  left_join(egc_prey_total_reads,by=c("Group","SampleID","dataset")) %>%
+  mutate(pReads=sumReads/total_reads)
+
+plotdat$dataset <- factor(plotdat$dataset,levels=c("forward","reverse","merged"))
+
+plot.waco <- ggplot(data=filter(plotdat, Group=="WACO"), aes(x=SampleID, y=pReads, fill=phylum)) +
+  geom_col() + facet_grid(cols=vars(Group), rows=vars(dataset), scales="free") +
+  ggtitle("Phyla") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+plot.wass <- ggplot(data=filter(plotdat, Group!="WACO"), aes(x=SampleID, y=pReads, fill=phylum)) +
+  geom_col() + facet_grid(cols=vars(Group), rows=vars(dataset), scales="free") +
+  ggtitle("Phyla") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5)) 
+plot_grid(plot.waco,plot.wass)
+```
+<br>
+
+I suspect the *Chordata* is contamination from me or from the SEFS lab...
+```{r echo=FALSE}
+egc_prey %>% filter(phylum=="Chordata") %>% dplyr::select(SampleID,taxon) %>% distinct()
+```
+<br>
+
+Weird, it almost looks like WACO_2021_001a should be the positive control???
+
+The wolf DNA in WACO_2021_002c is contamination from SEFS. Let's remove the *Chordata* DNA for now. 
+```{r}
+egc_prey %<>% filter(phylum!="Chordata")
+
+egc_prey_total_reads <- egc_prey %>%
+  group_by(Group,SampleID,dataset) %>%
+  summarise(total_reads=sum(nReads))
+```
+<br>
+
+Ok, with the new prey data set:
+```{r echo=FALSE, fig.width=10, fig.height=7}
+plotdat <-  egc_prey %>%
+  group_by(Group,SampleID,dataset,phylum, taxon) %>%
+  summarise(sumReads=sum(nReads), .groups="drop") %>%
+  left_join(egc_prey_total_reads,by=c("Group","SampleID","dataset")) %>%
+  mutate(pReads=sumReads/total_reads)
+
+plotdat$dataset <- factor(plotdat$dataset,levels=c("forward","reverse","merged"))
+
+ggplot(data=filter(plotdat, phylum %in% c("Arthropoda","Mollusca","Cnidaria")), aes(x=SampleID, y=pReads, fill=taxon)) +
+  geom_col() + facet_grid(col=vars(Group), rows=vars(dataset), scales="free") +
+  ggtitle("Arthropoda, Mollusca, & Cnidaria") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+So we have lots of Dungeness crab and *Hemigrapsus* reads (plus crab that couldn't be ID'd to genus, *Malacostraca*). But there are also some other cool things: 
+
+- amphipods: *Ampithoe lacertosa*
+- copepods: *Amphiascopsis cinctus*
+- ostracods: *Cyprideis torosa*
+- worms: *Algaophenia tubulifera*
+- barnacles (*Balanus*)
+- bivalves: *Mya spp.* are soft-shell clams; *Ruditapes* are little-neck clam (yay!!!!)
+
+Also, really crazy-- *portunion conformis* is a parasitic isopod, often found in shore crab hosts
+<br>
+
+```{r echo=FALSE}
+ggplot(data=filter(plotdat, phylum %in% c("Bacillariophyta","Chlorophyta")), aes(x=SampleID, y=pReads, fill=taxon)) +
+  geom_col() + facet_grid(cols=vars(Group), rows=vars(dataset), scales="free") +
+  ggtitle("Algae & Diatoms") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+Summarise and save the prey data
+```{r}
+egc_prey_summary <- egc_prey %>%
+  separate(col=SampleID, into=c("Crab","replicate"), sep=-1,remove=FALSE) %>%
+  left_join(egc_prey_total_reads,by=c("Group","SampleID","dataset")) %>%
+  mutate(pReads=nReads/total_reads) %>%
+  group_by(taxon,kingdom,phylum,class,order,family,genus,species,dataset,score) %>%
+  summarise(nCrabs=length(unique(Crab)), nReplicates=length(unique(SampleID)), total_reads=sum(nReads), mean_pReads=mean(pReads), sd_pReads=sd(pReads),
+            SampleIDs=paste0(SampleID,collapse=","))
+
+
+write.csv(egc_prey_summary, here(outdir,"BF3_BLAST_prey_taxa_EGC.csv"), row.names=FALSE)
+```
+<br>
+<br>
+
+## Dungies
+
+```{r}
+dungy_prey <- dungy_dat %>%
+  mutate(Predator=ifelse(taxon == "Metacarcinus magister",1,0)) %>%
+  filter(Predator==0) %>%
+  filter(!(phylum %in% c("Actinobacteria","Bacteroidetes","Planctomycetes","Proteobacteria")))
+
+dungy_prey_total_reads <- dungy_prey %>%
+  group_by(SampleID,dataset) %>%
+  summarise(total_reads=sum(nReads))
+```
+```{r echo=FALSE, fig.width=10, fig.height=6}
+plotdat <-  dungy_prey %>%
+  group_by(SampleID,dataset,taxon) %>%
+  summarise(sumReads=sum(nReads), .groups="drop") %>%
+  left_join(dungy_prey_total_reads,by=c("SampleID","dataset")) %>%
+  mutate(pReads=sumReads/total_reads)
+
+plotdat$dataset <- factor(plotdat$dataset,levels=c("forward","reverse","merged"))
+
+ggplot(plotdat, aes(x=SampleID, y=pReads, fill=taxon)) +
+  geom_col() +
+  facet_wrap(~dataset) +
+  ggtitle("Taxa") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+Well, crap, it looks like there's just a bunch of contamination from the green crab. Plus some brown algae (*Hecatonema maculans*)
+
+
+Summarise and save the prey data
+```{r}
+dungy_prey_summary <- dungy_prey %>%
+  separate(col=SampleID, into=c("Crab","replicate"), sep=-1,remove=FALSE) %>%
+  left_join(dungy_prey_total_reads,by=c("SampleID","dataset")) %>%
+  mutate(pReads=nReads/total_reads) %>%
+  group_by(taxon,kingdom,phylum,class,order,family,genus,species,dataset,score) %>%
+  summarise(nCrabs=length(unique(Crab)), nReplicates=length(unique(SampleID)), total_reads=sum(nReads), mean_pReads=mean(pReads), sd_pReads=sd(pReads),
+            SampleIDs=paste0(SampleID,collapse=","))
+
+
+write.csv(dungy_prey_summary, here(outdir,"BF3_BLAST_prey_taxa_Dungeness.csv"), row.names=FALSE)
+```
+<br>
+<br>
+
+
+
+
+
+
+
+
+
+
+
+
+
