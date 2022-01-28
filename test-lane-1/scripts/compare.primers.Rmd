@@ -1,0 +1,393 @@
+---
+title: 'Compare COI Primers'
+author: "Mary Fisher"
+date: "1/26/2022"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+# Description
+
+The first sequencing lane was designed to answer three questions: 
+
+1. Which primer(s) do we want to use for the remainder of the (1) Salish Sea Green crab, (2) Willapa Bay Green crab, and (3) Dungeness crab instars? Factors to consider: amplification of predator DNA, presence of expected prey / prey of particular interest
+
+2. Are we getting usable data from the 2018 Salish Sea Green crab samples, which are subsamples of the 95% etOH in which dissected stomachs were stored?
+
+3. Are there any major signals of contamination from the SEFS lab (not particularly relevant anymore)
+
+
+
+# Set up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<br>
+
+This script requires the following packages:
+```{r message=FALSE, warning=FALSE}
+library(here)
+library(tidyverse)
+library(magrittr)
+library(cowplot)
+```
+<br>
+
+User directories
+```{r}
+indir_blast  <- 'test-lane-1/data/blast'
+indir_asv    <- 'test-lane-1/data/dada2'
+indir_meta   <- 'test-lane-1/data/cutadapt'
+outdir       <- 'test-lane-1/results'
+```
+<br>
+
+What are the suffixes of the processed blast file with taxonomy from script 6?
+```{r}
+# hashes with unique staxids
+suffix1 <- 'blast_uniqueIDs_taxonomy.csv'
+
+# hashes with multiple IDs, that required the LCA function
+suffix2 <- 'blast_multipleIDs_taxonomy.csv'
+```
+<br>
+<br>
+
+
+# Question 1: Primer Comparison
+
+## Data
+
+To answer this question, we need both the ASV table and the Blast taxonomy. 
+```{r message=FALSE, warning=TRUE}
+asv.b   <- read_csv(here(indir_asv,'BF3', 'merged_ASV_table.csv'))
+asv.l   <- read_csv(here(indir_asv,'Leray', 'merged_ASV_table.csv'))
+asv.lxt <- read_csv(here(indir_asv,'LerayXT', 'merged_ASV_table.csv'))
+```
+<br>
+
+Note that the processed blast taxonomy files have results from forward-only, reverse-only, and merged reads. for this comparison, let's focus only on merged reads.
+```{r message=FALSE, warning=TRUE}
+tax_key.b <- read_csv(here(indir_blast, paste0("lane1_bf3_",suffix2))) %>%
+  rename("Hash"=representative)
+tax_key.b %<>%  bind_rows(read_csv(here(indir_blast, paste0("lane1_bf3_",suffix1))) %>%
+              rename("Hash"=qseqid) %>%
+                mutate(taxID="unique", score="unique") %>%
+              dplyr::select(all_of(colnames(tax_key.b)))) %>%
+  filter(dataset=="merged")
+
+tax_key.l <- read_csv(here(indir_blast, paste0("lane1_leray_",suffix2))) %>%
+  rename("Hash"=representative)
+tax_key.l %<>%  bind_rows(read_csv(here(indir_blast, paste0("lane1_leray_",suffix1))) %>%
+              rename("Hash"=qseqid) %>%
+                mutate(taxID="unique", score="unique") %>%
+              dplyr::select(all_of(colnames(tax_key.l)))) %>%
+  filter(dataset=="merged")
+
+tax_key.lxt <- read_csv(here(indir_blast, paste0("lane1_lerayxt_",suffix2))) %>%
+  rename("Hash"=representative)
+tax_key.lxt %<>%  bind_rows(read_csv(here(indir_blast, paste0("lane1_lerayxt_",suffix1))) %>%
+              rename("Hash"=qseqid) %>%
+                mutate(taxID="unique", score="unique") %>%
+              dplyr::select(all_of(colnames(tax_key.lxt)))) %>%
+  filter(dataset=="merged")
+```
+<br>
+
+Connect the taxonomy to the hashes in the ASV tables.
+```{r}
+bdat   <- left_join(asv.b, tax_key.b,by="Hash")
+ldat   <- left_join(asv.l, tax_key.l,by="Hash")
+lxtdat <- left_join(asv.lxt, tax_key.lxt,by="Hash")
+```
+<br>
+
+To differentiate between crab species and sampling groups, read in the sequencing metadata and connect to the `Sample_name` (actually just an ID number) in the ASV table.
+```{r message=FALSE}
+marker    <- c("BF3", "Leray", "LerayXT")
+
+for(m in marker){
+  metadat <- read_csv(here(indir_meta, m, paste0('cutadapt_output_metadata_',m,'.csv')))
+  
+  metadat %<>% dplyr::select(Sample_name, file1) %>%
+  # from the file name, get the sample ID
+  mutate(SampleID=str_remove(file1,"_L001_R1_001.fastq.fastq"))
+  if(m!="LerayXT"){
+    metadat %<>% mutate(SampleID=str_remove(SampleID,paste0("Locus_",m,"_",m,"_")))
+  } else{
+    metadat %<>% mutate(SampleID=str_remove(SampleID,paste0("Locus_",m,"_LXT_")))
+  }
+  metadat %<>% mutate(SampleID=ifelse(Sample_name >= 10, str_sub(SampleID,start=1, end=-5),
+                                      str_sub(SampleID,start=1, end=-4))) %>%
+    # from the sample ID, get the site, crab ID, and replicate (tech)
+    mutate(site=ifelse(SampleID %in% c("Kangaroo","PCRNegative","SpeedVacNegative"), "Control", 
+                       str_sub(SampleID, start=1,end=4))) %>%
+    mutate(site=ifelse(site!="WASS",site,ifelse(grepl("2020",SampleID),"WASS 2020", "WASS 2018"))) %>%
+    separate(col=SampleID, into=c("crab","tech"), sep=-1,remove=FALSE) %>%
+    mutate(tech=tolower(tech)) %>%
+    dplyr::select(-file1)
+  
+  if(m=="BF3"){
+    # clean up the extra tech replicate I have for one of my crabs.
+    metadat[which(metadat$SampleID=="WASS_2020_190a_25uL"),"crab"] <- "WASS_2020_190"
+    metadat[which(metadat$SampleID=="WASS_2020_190a_25uL"),"tech"] <- "d"
+    bdat <- left_join(bdat,metadat,by="Sample_name")
+  } else if(m=="Leray"){
+    ldat <- left_join(ldat,metadat,by="Sample_name")
+  } else{
+    lxtdat <- left_join(lxtdat,metadat,by="Sample_name")
+  }
+  
+}
+```
+<br>
+
+Finally, create one giant data frame. We can do this because there is a column `Marker` that specifies the primer.
+```{r}
+all_dat <- bind_rows(bdat,ldat,lxtdat)
+```
+<br>
+
+
+## Hash similarity
+
+First, let's make sure the hashes are all the same length.
+```{r}
+hash.length <- list(bf3=nchar(bdat$Hash),
+                    leray=nchar(ldat$Hash),
+                    lxt=nchar(lxtdat$Hash))
+unique(hash.length[[1]])==unique(hash.length[[2]])
+unique(hash.length[[1]])==unique(hash.length[[3]])
+unique(hash.length[[2]])==unique(hash.length[[3]])
+```
+<br>
+
+What proportion of all hashes are shared between primers?
+```{r}
+b.l.share   <- intersect(bdat$Hash, ldat$Hash);   length(b.l.share) / length(unique(c(ldat$Hash, bdat$Hash)))
+b.lxt.share <- intersect(bdat$Hash, lxtdat$Hash); length(b.lxt.share) / length(unique(c(bdat$Hash, lxtdat$Hash)))
+l.lxt.share <- intersect(ldat$Hash, lxtdat$Hash); length(l.lxt.share) / length(unique(c(ldat$Hash, lxtdat$Hash)))
+```
+<br>
+Just realizing now that since BF3 and Leray/LerayXT are different lengths, obviously the merged hashes won't be shared... 
+
+
+### Leray v LerayXT
+Diving deeper into the comparisons between Leray and LerayXT, let's find proportion of hashes shared per sample.
+
+```{r}
+```
+<br>
+
+## Missing Taxonomy
+
+Which primers had the most reads that couldn't be assigned taxonomy? **BF3**
+```{r echo=FALSE, message=FALSE, fig.height=3,fig.width=8}
+missing_dat <- all_dat %>%
+  group_by(Locus,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop") %>%
+  left_join(filter(all_dat, is.na(rank)) %>%
+              group_by(Locus,site) %>%
+              summarise(missing_reads=sum(nReads), .groups="drop")) %>%
+  mutate(preads_missing=missing_reads/total_reads)
+
+ggplot(missing_dat,aes(x=Locus,y=preads_missing)) +
+  geom_col() +
+  facet_grid(cols=vars(site)) +
+  ylab("Proportion Reads\n Missing Taxonomy") +
+  theme_bw()
+```
+<br>
+
+```{r}
+all_dat2 <- filter(all_dat, !is.na(rank))
+```
+<br>
+<br>
+
+## Non-Target DNA
+
+Which primers amplified the most bacterial / amoeba DNA? **BF3**
+```{r echo=FALSE, message=FALSE, fig.height=3,fig.width=8}
+nontarget_taxa <- c("Actinobacteria","Bacteroidetes","Planctomycetes","Proteobacteria","Discosea")
+nontarget_dat <- all_dat2 %>%
+  group_by(Locus,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop") %>%
+  left_join(filter(all_dat2, phylum %in% nontarget_taxa) %>%
+              group_by(Locus,site) %>%
+              summarise(nontarget_reads=sum(nReads), .groups="drop")) %>%
+  mutate(preads=nontarget_reads/total_reads)
+
+ggplot(nontarget_dat,aes(x=Locus,y=preads)) +
+  geom_col() +
+  facet_grid(cols=vars(site)) +
+  ylab("Proportion Reads\n Non-Target DNA") +
+  theme_bw()
+```
+<br>
+<br>
+
+
+## Predator DNA
+
+### EGC
+
+Get only the Green Crab samples, and ignore hashes with missing taxonomic information.
+```{r echo=FALSE}
+egc_dat <- filter(all_dat, site %in% c("WACO","WASS 2018","WASS 2020") & !is.na(rank))
+unique(egc_dat$crab)
+
+egc_rps <- egc_dat %>%
+  group_by(Sample_name,Locus,SampleID,crab,tech,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop")
+
+egc_rpsite <- egc_dat %>%
+  group_by(Locus,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop")
+```
+<br>
+
+
+Which primer amplified the least Green Crab DNA? **LerayXT**
+
+The most Green Crab DNA? **BF3** for WASS 2020, and **Leray** otherwise.
+
+```{r echo=FALSE, message=FALSE, fig.width=6,fig.height=5}
+egc_pred <- egc_dat %>%
+  mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | 
+                           genus == "Carcinus",1,0)) %>%
+  group_by(Locus,site,Predator) %>%
+  summarise(reads=sum(nReads), .groups="drop") %>%
+  left_join(egc_rpsite) %>%
+  mutate(pReads=reads/total_reads)
+
+ggplot(egc_pred, aes(x=site,y=pReads,fill=as.factor(Predator))) +
+  geom_col() +
+  facet_grid(rows=vars(Locus), scales="free") +
+  scale_fill_manual(values=c("darkblue","maroon","grey58"), name="Predator") +
+  ggtitle("By Site") +
+  theme_bw()
+```
+<br>
+
+```{r echo=FALSE, message=FALSE}
+egc_pred <- egc_dat %>%
+  mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | genus == "Carcinus",1,0)) %>%
+  group_by(Sample_name,Locus,SampleID,crab,tech,site,Predator) %>%
+  summarise(reads=sum(nReads), .groups="drop") %>%
+  left_join(egc_rps) %>%
+  mutate(pReads=reads/total_reads)
+
+ggplot(data=filter(egc_pred, Predator==1), aes(x=SampleID,y=pReads,fill=as.factor(Predator))) +
+  geom_col() +
+  facet_grid(cols=vars(site),rows=vars(Locus), scales="free") +
+  scale_fill_manual(values=c("maroon","grey58"), name="Predator") +
+  ggtitle("By Sample") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+```{r}
+egc_dat2 <- filter(all_dat2, site %in% c("WACO","WASS 2018","WASS 2020")) %>%
+  mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | 
+                           genus == "Carcinus",1,0)) %>%
+  filter(Predator==0 | is.na(Predator))
+```
+<br>
+<br>
+
+### Dungies
+
+Get only the Dungy samples, and ignore hashes with missing taxonomic information.
+```{r echo=FALSE}
+dungy_dat <- filter(all_dat2, site %in% c("MARP"))
+unique(dungy_dat$crab)
+
+dungy_rps <- dungy_dat %>%
+  group_by(Sample_name,Locus,SampleID,crab,tech) %>%
+  summarise(total_reads=sum(nReads), .groups="drop")
+```
+<br>
+
+Which primer amplified the least Dungy DNA?
+```{r echo=FALSE, message=FALSE, fig.height=4}
+dungy_pred <- dungy_dat %>%
+  mutate(Predator=ifelse(taxon == "Metacarcinus magister" | genus == "Metacarcinus",1,0)) %>%
+  group_by(Sample_name,Locus,SampleID,crab,tech,Predator) %>%
+  summarise(reads=sum(nReads), .groups="drop") %>%
+  left_join(dungy_rps) %>%
+  mutate(pReads=reads/total_reads)
+
+ggplot(data=dungy_pred, aes(x=SampleID,y=pReads,fill=as.factor(Predator))) +
+  geom_col() +
+  facet_grid(cols=vars(Locus), scales="free") +
+  scale_fill_manual(values=c("darkblue","grey58"), name="Predator") +
+  ggtitle("By Sample") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+A better question: which primer amplified the least green crab DNA in the Dungy samples? **LerayXT**
+```{r echo=FALSE, message=FALSE, fig.height=4}
+dungy_pred <- dungy_dat %>%
+  mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | genus == "Carcinus",1,0)) %>%
+  group_by(Sample_name,Locus,SampleID,crab,tech,Predator) %>%
+  summarise(reads=sum(nReads), .groups="drop") %>%
+  left_join(dungy_rps) %>%
+  mutate(pReads=reads/total_reads)
+
+ggplot(data=dungy_pred, aes(x=SampleID,y=pReads,fill=as.factor(Predator))) +
+  geom_col() +
+  facet_grid(cols=vars(Locus), scales="free") +
+  scale_fill_manual(values=c("darkblue","maroon","grey58"), name="Predator") +
+  ggtitle("By Sample") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+
+<br>
+<br>
+
+## Prey Composition: diversity
+
+### EGC
+
+**How did diversity of phyla / species differ between primers?**
+
+**What species were captured by only 1-2 primers?**
+
+
+### Dungies
+
+
+## Prey Composition: specificity
+
+### Overview
+
+For each phylum / class, which primer was able to detect the most ASVs down to the species level?
+
+### Willapa Bay 
+
+species of interest: Cancer magister; Ruditapes
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -11,6 +11,16 @@
 ##################################################################################
 
 find_PCR_BCDs <- function(df, seq_runs = unique(df$seq_run)) { # Includes all seq runs by default
+  
+  #--added 2022-01-28 MCF--#
+  checkdat <- df %>% group_by(bio) %>% summarise(nPCR=length(unique(tech)))
+  if(any(checkdat$nPCR < 2)){
+    removedat <- filter(checkdat,nPCR<2)
+    message("removing the following sample(s) without PCR replicates: ", paste0(removedat$bio,collapse=","))
+    df <- df %>% filter(!(bio %in% removedat$bio))
+  } else{message("all biological replicates have at least two or more PCR replicates. data ready for processing.")}
+  #----#
+  
   df <- cvt_to_PCR_props(df) %>%
     filter(seq_run %in% seq_runs) %>%
     mutate(bottle = paste(site, bio, sep = ""))
