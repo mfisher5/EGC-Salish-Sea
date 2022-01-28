@@ -1,0 +1,595 @@
+---
+title: "Choose Mock Community Composition"
+author: "M Fisher"
+date: "1/26/2021"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+# Description
+
+Use the lane 1 data set to identify taxa that should be included in mock communities. 
+
+
+# Set up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<br>
+
+This script requires the following packages:
+```{r message=FALSE, warning=FALSE}
+library(here)
+library(tidyverse)
+library(magrittr)
+library(cowplot)
+```
+<br>
+
+# Leray XT
+```{r}
+marker <- 'LerayXT'
+```
+<br>
+
+User directories
+```{r}
+indir_blast  <- 'test-lane-1/data/blast'
+indir_asv    <- 'test-lane-1/data/dada2/LerayXT'
+indir_meta   <- 'test-lane-1/data/cutadapt/LerayXT'
+outdir       <- 'test-lane-1/results'
+```
+<br>
+
+What are the names of the processed blast file with taxonomy from script 6?
+```{r}
+# hashes with unique staxids
+infile1 <- 'lane1_lerayxt_blast_uniqueIDs_taxonomy.csv'
+
+# hashes with multiple IDs, that required the LCA function
+infile2 <- 'lane1_lerayxt_blast_multipleIDs_taxonomy.csv'
+```
+<br>
+
+
+## Data
+Taxonomy from script `6.parse.blast.results`
+```{r}
+tax_key <- read_csv(here(indir_blast, infile2)) %>%
+  rename("Hash"=representative)
+
+tax_key %<>% bind_rows(read_csv(here(indir_blast, infile1)) %>%
+              rename("Hash"=qseqid) %>%
+                mutate(taxID="unique", score="unique") %>%
+              dplyr::select(all_of(colnames(tax_key))))
+```
+<br>
+
+
+Sequencing sample metadata, so that we can connect sample name (actually a number; in the ASV table) to sample ID.
+```{r}
+metadat <- read_csv(here(indir_meta, paste0('cutadapt_output_metadata_',marker,'.csv')))
+
+metadat %<>% dplyr::select(Sample_name, file1) %>%
+  mutate(SampleID=str_remove(file1,"_L001_R1_001.fastq.fastq")) %>%
+  mutate(SampleID=str_remove(SampleID,paste0("Locus_",marker,"_LXT_"))) %>%
+  mutate(SampleID=ifelse(as.numeric(Sample_name) > 10, str_sub(SampleID,start=1, end=-5),
+                         str_sub(SampleID,start=1, end=-4))) %>%
+  mutate(Group=ifelse(SampleID %in% c("Kangaroo","PCRNegative","SpeedVacNegative"), "Control", str_sub(SampleID, start=1,end=4))) %>%
+  mutate(Group=ifelse(Group!="WASS",Group,ifelse(grepl("2020",SampleID),"WASS 2020", "WASS 2018"))) %>%
+  dplyr::select(-file1)
+```
+<br>
+
+merged ASV table
+```{r}
+mdat <- read_csv(here(indir_asv, 'merged_ASV_table.csv')) %>%
+  mutate(dataset="merged")
+```
+<br>
+
+Join the sample metadata to the ASV dataframe
+```{r}
+mdat %<>% left_join(metadat,by="Sample_name")
+```
+<br>
+
+Join the taxonomic key to the ASV dataframe
+```{r}
+mdat %<>% left_join(filter(tax_key, dataset=="merged"),by=c("Hash","dataset"))
+```
+<br>
+
+forward ASV table
+```{r}
+fdat <- read_csv(here(indir_asv, 'F_ASV_table.csv')) %>%
+  mutate(dataset="forward")
+```
+<br>
+
+Join the sample metadata to the ASV dataframe
+```{r}
+fdat %<>% left_join(metadat,by="Sample_name")
+```
+<br>
+
+Join the taxonomic key to the ASV dataframe
+```{r}
+fdat %<>% left_join(filter(tax_key, dataset=="forward"),by=c("Hash","dataset"))
+```
+<br>
+
+
+reverse ASV table
+```{r}
+rdat <- read_csv(here(indir_asv, 'R_ASV_table.csv')) %>%
+  mutate(dataset="reverse")
+```
+<br>
+
+Join the sample metadata to the ASV dataframe
+```{r}
+rdat %<>% left_join(metadat,by="Sample_name")
+```
+<br>
+
+Join the taxonomic key to the ASV dataframe
+```{r}
+rdat %<>% left_join(filter(tax_key, dataset=="reverse"),by=c("Hash","dataset"))
+```
+<br>
+
+combine data sets
+```{r}
+dat <- bind_rows(mdat,rdat,fdat)
+```
+
+<br>
+
+### data quality check
+
+make sure that each hash has only one set of taxonomic information
+```{r}
+checkdat <- dat %>% 
+  group_by(Sample_name,Hash,dataset) %>%
+  summarise(count=n(), .groups="drop") %>%
+  filter(count > 1)
+```
+<br>
+
+It looks like all of those with a '2' count either are true duplicates (?) or have matching taxonomy between the two unique IDs, but one row of taxonomic info is more fine-scale than the other. Save only the most specific taxonomic info.
+```{r}
+## rows to remove have the most NAs
+checkdat %<>% left_join(dat,by=c("Sample_name","Hash","dataset")) %>%
+  arrange(desc(rowSums(is.na(.)))) %>%
+  distinct(Sample_name,dataset, .keep_all = TRUE)
+
+## remove those rows
+dat %<>% anti_join(checkdat, by=c("Sample_name","Hash", "dataset","rank", "taxon"))
+
+rm(checkdat)
+```
+<br>
+
+```{r}
+dat %>% 
+  group_by(Sample_name,Hash,dataset) %>%
+  summarise(count=n(), .groups="drop") %>%
+  filter(count > 1)
+```
+<br>
+
+Rows 2 and 4 have finer scale taxonomic assignments than their pairs, 1 and 3 - I'm not sure why they weren't filtered out.
+```{r}
+checkdat <- dat %>% 
+  group_by(Sample_name,Hash,dataset) %>%
+  summarise(count=n(), .groups="drop") %>%
+  filter(count > 1) %>% left_join(dat,by=c("Sample_name","Hash","dataset"))
+
+checkdat %<>% slice(2,4)
+
+## remove those rows
+dat %<>% anti_join(checkdat, by=c("Sample_name","Hash", "dataset","rank", "taxon"))
+
+rm(checkdat)
+
+dat %>% 
+  group_by(Sample_name,Hash,dataset) %>%
+  summarise(count=n(), .groups="drop") %>%
+  filter(count > 1)
+```
+<br>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+remove hashes missing taxonomy
+```{r}
+dat2 <- filter(dat, !is.na(rank))
+```
+<br>
+
+
+### remove contamination
+
+**CONTROL**
+Whatever is in the negative control should be removed, as well as any *Chordata* DNA (previous scripts found this to be kangaroo, some misc *Mammalia*)
+
+```{r}
+control_dat <- dat2 %>% filter(Group=="Control")
+
+unique(control_dat$taxon)
+```
+<br>
+
+```{r}
+dat_filter <- dat2 %>%
+  filter(!(taxon %in% unique(control_dat$taxon)))
+```
+<br>
+
+```{r}
+dat_filter %>% filter(phylum=="Chordata") %>% dplyr::select(SampleID,dataset,rank,taxon)
+```
+<br>
+
+```{r}
+dat_filter %<>%
+  filter(phylum!="Chordata")
+```
+<br>
+
+**PREDATOR**
+
+check to see if there are any other taxa that may be green crab (*Carcinus maenas* already removed using control sample)
+```{r}
+ggplot(data=filter(dat_filter, order=="Decapoda"), aes(x=SampleID, y=nReads, fill=taxon)) +
+  geom_col() +
+  facet_grid(rows=vars(dataset), cols=vars(Group), scales="free") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+I'm going to remove *Carcinus* hashes, as well as the non-specific *Decapoda*.
+```{r}
+dat_filter %<>% filter(!(taxon %in% c("Decapoda","Carcinus")))
+```
+<br>
+
+
+**BACTERIA**
+check to see if there are any other bacterial taxa.
+```{r}
+dat_filter %>% pull(phylum) %>% unique()
+```
+<br>
+
+Take out everything in *Bacteroidetes*, *Discosea* (amoebas),*Proteobacteria*. I'm not sure what to do about the fungi...
+```{r}
+dat_filter %<>% filter(!(phylum %in% c("Bacteroidetes","Discosea","Proteobacteria")))
+```
+<br>
+
+I think I'll remove the fungi too, for now.
+```{r}
+dat_filter %<>% filter(!(phylum %in% c("Oomycota","Ascomycota")))
+```
+<br>
+
+```{r}
+dat_filter %>% pull(phylum) %>% unique()
+```
+So we're left with arthropods, cnidarians, rotifers, worms, and algae.
+<br>
+
+**HIGHER TAXONOMIC RANK**
+
+It isn't super helpful to have anything above genus, but I'll keep in families too.
+```{r}
+dat_filter %<>% filter(rank %in% c("family","genus","species"))
+```
+<br>
+
+
+
+
+## Select Taxa
+
+### Green Crab
+
+```{r}
+egc_mock <- c()
+```
+<br>
+
+```{r}
+egc_dat <- dat_filter %>% filter(Group %in% c("WACO","WASS 2018","WASS 2020"))
+```
+<br>
+
+
+What is the full list of taxa present?
+```{r}
+unique(egc_dat$taxon)
+```
+<br>
+
+Calculate read proportions
+```{r}
+reads_per_sample <- egc_dat %>%
+  group_by(Group, Sample_name, SampleID, dataset) %>%
+  summarise(sumReads=sum(nReads))
+
+egc_pdat <- egc_dat %>%
+  left_join(reads_per_sample, by=c("Group","Sample_name","SampleID","dataset")) %>%
+  group_by(Group, Sample_name, SampleID, dataset, sumReads, rank, taxon) %>%
+  summarise(tReads=sum(nReads)) %>%
+  mutate(pReads=tReads/sumReads)
+```
+<br>
+
+Rejoin full taxonomic information to the taxon. 
+```{r}
+tax_simple <- dat_filter %>%
+  dplyr::select(rank,taxon,kingdom,phylum,class,order,family,genus,species) %>%
+  distinct()
+
+egc_pdat %<>% left_join(tax_simple,by=c("rank","taxon"))
+
+unique(egc_pdat$phylum)
+```
+<br>
+
+```{r echo=FALSE,fig.width=10}
+ggplot(data=filter(egc_pdat, phylum %in% c("Arthropoda")), aes(x=SampleID, y=pReads, fill=taxon)) +
+  geom_col() + facet_grid(col=vars(Group), rows=vars(dataset), scales="free") +
+  ggtitle("Arthropods") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+```{r}
+egc_mock <- c("Metacarcinus magister","Hemigrapsus oregonensis")
+```
+<br>
+
+
+
+Without the crab species?
+```{r fig.height=10, fig.width=7}
+plotdat <- egc_pdat %>%
+  filter(phylum %in% c("Arthropoda") & !(family %in% c("Cancridae","Varunidae"))) %>%
+  filter(Group=="WACO")
+ggplot(data=plotdat, aes(x=SampleID, y=pReads, fill=taxon)) +
+  geom_col() + facet_grid(col=vars(Group), rows=vars(dataset), scales="free") +
+  ggtitle("WACO Arthropods") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+
+```{r fig.height=10, fig.width=7}
+plotdat <- egc_pdat %>%
+  filter(phylum %in% c("Arthropoda") & !(family %in% c("Cancridae","Varunidae"))) %>%
+  filter(Group %in% c("WASS 2018","WASS 2020"))
+ggplot(data=plotdat, aes(x=SampleID, y=pReads, fill=taxon)) +
+  geom_col() + facet_grid(col=vars(Group), rows=vars(dataset), scales="free") +
+  ggtitle("WASS Arthropods") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+*amblychia* are moths, *metrocoris* is some kind of insect, *leptacis* are parasitoid wasps, *pemphredon* are digger wasps, and *Euglossia* is a bee species...
+<br>
+
+```{r}
+egc_mock <- c(egc_mock, "Ampithoe lacertosa","Monocorophium acherusicum","Balanus crenatus","Balanus glandula")
+```
+<br>
+<br>
+
+```{r echo=FALSE,fig.width=10}
+ggplot(data=filter(egc_pdat, phylum %in% c("Annelida")), aes(x=SampleID, y=pReads, fill=taxon)) +
+  geom_col() + facet_grid(col=vars(Group), rows=vars(dataset), scales="free") +
+  ggtitle("Worms") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+
+*Platynereis* is a genus of marine annelid worms.
+
+```{r}
+egc_mock <- c(egc_mock,"Platynereis sp.")
+```
+<br>
+<br>
+
+```{r echo=FALSE}
+ggplot(data=filter(egc_pdat, phylum %in% c("Cnidaria")), aes(x=SampleID, y=pReads, fill=taxon)) +
+  geom_col() + facet_grid(col=vars(Group), rows=vars(dataset), scales="free") +
+  ggtitle("Jellies") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+well, *praya dubia* is a giant siphonophore that lives in the deep sea, so...
+<br>
+<br>
+
+```{r echo=FALSE, fig.height=10, fig.width=7}
+ggplot(data=filter(egc_pdat, phylum %in% c("Rhodophyta", "Bacillariophyta")), aes(x=SampleID, y=pReads, fill=taxon)) +
+  geom_col() + facet_grid(col=vars(Group), rows=vars(dataset), scales="free") +
+  ggtitle("Algae / Diatoms") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+
+<br>
+```{r}
+egc_mock <- c(egc_mock, "Melosira nummuloides", "Bangiophyseae sp.","Bacillariaceae")
+```
+<br>
+<br>
+
+```{r echo=FALSE, fig.height=10, fig.width=7}
+ggplot(data=filter(egc_pdat, phylum %in% c("Rotifera")), aes(x=SampleID, y=pReads, fill=taxon)) +
+  geom_col() + facet_grid(col=vars(Group), rows=vars(dataset), scales="free") +
+  ggtitle("Rotifers") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+```{r}
+egc_mock <- c(egc_mock, "Euchlanis dilatata")
+```
+<br>
+<br>
+
+```{r eval=FALSE, fig.height=10, fig.width=7}
+ggplot(data=filter(egc_pdat, is.na(phylum)), aes(x=SampleID, y=pReads, fill=taxon)) +
+  geom_col() + facet_grid(col=vars(Group), rows=vars(dataset), scales="free") +
+  ggtitle("Missing Phylum") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+Mostly two classes of diatoms in the merged reads.
+```{r}
+egc_mock <- c(egc_mock, "Coscinodiscophyceae","Mediophyceae")
+```
+<br>
+
+
+## Missing taxa
+
+Adding in some taxa that were found in BF3 / Leray, which we expect green crab to eat, but which are not in the LerayXT data set.
+
+```{r}
+egc_mock <- c(egc_mock,"Mya arenaria","Ruditapes philippinarum","Aglaophenia tubulifera")
+```
+<br>
+
+
+#### save list of species
+```{r eval=FALSE}
+write.csv(egc_mock, here(outdir,"LerayXT_draft_mock_community_EGC.csv"), row.names=FALSE)
+```
+<br>
+
+
+#### save proportional prey data set
+
+Save the proportions of reads per taxon, per Group (across samples) -- by dataset
+```{r eval=FALSE}
+reads_per_group <- egc_dat %>%
+  group_by(Group, dataset) %>%
+  summarise(sumReads=sum(nReads))
+
+egc_summary_pdat <- egc_dat %>%
+  group_by(Group, dataset, rank, taxon) %>%
+  summarise(taxonReads=sum(nReads)) %>%
+  left_join(reads_per_group, by=c("Group","dataset")) %>%
+  mutate(pReads=taxonReads/sumReads)
+
+write.csv(egc_summary_pdat, here(outdir,"LerayXT_mock_community_taxa_EGC.csv"), row.names=FALSE)
+```
+<br>
+<br>
+
+## Dungeness Crab
+
+```{r}
+dungy_dat <- dat_filter %>% filter(Group %in% c("MARP"))
+```
+<br>
+
+
+What is the full list of taxa present?
+```{r}
+unique(dungy_dat$taxon)
+```
+<br>
+
+Calculate read proportions
+```{r}
+dungy_reads_per_sample <- dungy_dat %>%
+  group_by(Group, Sample_name, SampleID, dataset) %>%
+  summarise(sumReads=sum(nReads))
+
+dungy_pdat <- dungy_dat %>%
+  left_join(dungy_reads_per_sample, by=c("Group","Sample_name","SampleID","dataset")) %>%
+  group_by(Group, Sample_name, SampleID, dataset, sumReads, rank, taxon) %>%
+  summarise(tReads=sum(nReads)) %>%
+  mutate(pReads=tReads/sumReads)
+```
+<br>
+
+Rejoin full taxonomic information to the taxon. 
+```{r}
+tax_simple <- dat_filter %>%
+  dplyr::select(rank,taxon,kingdom,phylum,class,order,family,genus,species) %>%
+  distinct()
+
+dungy_pdat %<>% left_join(tax_simple,by=c("rank","taxon"))
+
+unique(dungy_pdat$phylum)
+```
+<br>
+
+```{r echo=FALSE}
+ggplot(data=dungy_pdat, aes(x=SampleID, y=pReads, fill=taxon)) +
+  geom_col() + facet_grid(col=vars(Group), rows=vars(dataset), scales="free") +
+  ggtitle("All Taxa") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+```{r}
+dungy_mock <- c("uncultured Bangiophyceae","Naididae","Euchlanis dilatata")
+```
+<br>
+<br>
+
+
+#### save list of species
+```{r eval=FALSE}
+write.csv(dungy_mock, here(outdir,"LerayXT_draft_mock_community_Dungies.csv"), row.names=FALSE)
+```
+<br>
+
+
+#### save proportional prey data set
+
+Save the proportions of reads per taxon, per Group (across samples) -- by dataset
+```{r eval=FALSE}
+dungy_reads_per_group <- dungy_dat %>%
+  group_by(Group, dataset) %>%
+  summarise(sumReads=sum(nReads))
+
+dungy_summary_pdat <- dungy_dat %>%
+  group_by(Group, dataset, rank, taxon) %>%
+  summarise(taxonReads=sum(nReads)) %>%
+  left_join(dungy_reads_per_group, by=c("Group","dataset")) %>%
+  mutate(pReads=taxonReads/sumReads)
+
+write.csv(egc_summary_pdat, here(outdir,"LerayXT_mock_community_taxa_Dungies.csv"), row.names=FALSE)
+```

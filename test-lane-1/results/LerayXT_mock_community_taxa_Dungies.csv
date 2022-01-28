@@ -1,0 +1,82 @@
+"Group","dataset","rank","taxon","taxonReads","sumReads","pReads"
+"WACO","forward","genus","Crangon",78,419878,0.000185768246966976
+"WACO","forward","genus","Eumida",5,419878,1.19082209594215e-05
+"WACO","forward","genus","Nitzschia",7,419878,1.66715093431902e-05
+"WACO","forward","genus","Pleurosigma",114,419878,0.000271507437874811
+"WACO","forward","genus","Pseudo-nitzschia",3,419878,7.14493257565293e-06
+"WACO","forward","genus","Skeletonema",27,419878,6.43043931808764e-05
+"WACO","forward","species","Amphiascopsis cinctus",2,419878,4.76328838376862e-06
+"WACO","forward","species","Ampithoe lacertosa",362,419878,0.00086215519746212
+"WACO","forward","species","Chaetoceros socialis",8,419878,1.90531535350745e-05
+"WACO","forward","species","Euchlanis dilatata",187,419878,0.000445367463882366
+"WACO","forward","species","Hemigrapsus oregonensis",227957,419878,0.542912465049372
+"WACO","forward","species","Melosira nummuloides",116,419878,0.00027627072625858
+"WACO","forward","species","Metacarcinus magister",190640,419878,0.454036648740825
+"WACO","forward","species","Monocorophium acherusicum",195,419878,0.00046442061741744
+"WACO","forward","species","Nitzschia cf. promare",41,419878,9.76474118672567e-05
+"WACO","forward","species","Paracorophium excavatum",5,419878,1.19082209594215e-05
+"WACO","forward","species","Platynereis sp. CMC02",10,419878,2.38164419188431e-05
+"WACO","forward","species","uncultured Bangiophyceae",121,419878,0.000288178947218001
+"WACO","merged","genus","Hemigrapsus",60728,377674,0.160794759501581
+"WACO","merged","genus","Leptacis",8,377674,2.11822894877593e-05
+"WACO","merged","species","Amblychia subrubida",16,377674,4.23645789755186e-05
+"WACO","merged","species","Ampithoe lacertosa",312,377674,0.000826109290022612
+"WACO","merged","species","Euchlanis dilatata",158,377674,0.000418350217383246
+"WACO","merged","species","Hemigrapsus oregonensis",136348,377674,0.361020350884625
+"WACO","merged","species","Melosira nummuloides",114,377674,0.00030184762520057
+"WACO","merged","species","Metacarcinus magister",179628,377674,0.475616537013403
+"WACO","merged","species","Metrocoris sp. Kotumsar",78,377674,0.000206527322505653
+"WACO","merged","species","Monocorophium acherusicum",178,377674,0.000471305941102644
+"WACO","merged","species","Navicula ramosissima",14,377674,3.70690066035787e-05
+"WACO","merged","species","Platynereis sp. CMC02",9,377674,2.38300756737292e-05
+"WACO","merged","species","uncultured Bangiophyceae",83,377674,0.000219766253435503
+"WACO","reverse","family","Cryptophagidae",15,392041,3.82613043023561e-05
+"WACO","reverse","genus","Hemigrapsus",47338,392041,0.120747574870996
+"WACO","reverse","genus","Leptacis",8,392041,2.04060289612566e-05
+"WACO","reverse","species","Amblychia subrubida",16,392041,4.08120579225132e-05
+"WACO","reverse","species","Ampithoe lacertosa",313,392041,0.000798385883109165
+"WACO","reverse","species","Cyclotella sp. MBTD-CMFRI-S080",17,392041,4.33628115426703e-05
+"WACO","reverse","species","Euchlanis dilatata",159,392041,0.000405569825604975
+"WACO","reverse","species","Hemigrapsus oregonensis",146885,392041,0.374667445496772
+"WACO","reverse","species","Melosira nummuloides",114,392041,0.000290785912697907
+"WACO","reverse","species","Metacarcinus magister",196793,392041,0.501970457171571
+"WACO","reverse","species","Metrocoris sp. Kotumsar",78,392041,0.000198958782372252
+"WACO","reverse","species","Monocorophium acherusicum",178,392041,0.000454034144387959
+"WACO","reverse","species","Nitzschia sp. NIES-3581",17,392041,4.33628115426703e-05
+"WACO","reverse","species","Platynereis sp. CMC02",9,392041,2.29567825814137e-05
+"WACO","reverse","species","Stylaster venustus",101,392041,0.000257626115635865
+"WASS 2018","forward","family","Bacillariaceae",5,205494,2.43316106552989e-05
+"WASS 2018","forward","family","Chironomidae",18,205494,8.75937983590762e-05
+"WASS 2018","forward","family","Naviculaceae",7,205494,3.40642549174185e-05
+"WASS 2018","forward","genus","Skeletonema",13,205494,6.32621877037772e-05
+"WASS 2018","forward","species","Balanus crenatus",9,205494,4.37968991795381e-05
+"WASS 2018","forward","species","Balanus glandula",8,205494,3.89305770484783e-05
+"WASS 2018","forward","species","Gomphonema clevei",36,205494,0.000175187596718152
+"WASS 2018","forward","species","Guinardia delicatula",29,205494,0.000141123341800734
+"WASS 2018","forward","species","Hemigrapsus oregonensis",204811,205494,0.996676301984486
+"WASS 2018","forward","species","Melosira nummuloides",549,205494,0.00267161084995182
+"WASS 2018","forward","species","uncultured Bangiophyceae",9,205494,4.37968991795381e-05
+"WASS 2018","merged","genus","Balanus",8,176868,4.52314720582581e-05
+"WASS 2018","merged","genus","Hemigrapsus",32875,176868,0.185873080489405
+"WASS 2018","merged","genus","Pemphredon",12,176868,6.78472080873872e-05
+"WASS 2018","merged","species","Aglaophenia tubulifera",108,176868,0.000610624872786485
+"WASS 2018","merged","species","Chorsia sp. BOLD:AAL7037",4,176868,2.26157360291291e-05
+"WASS 2018","merged","species","Hemigrapsus oregonensis",143286,176868,0.810129588167447
+"WASS 2018","merged","species","Hydraena lapidicola",13,176868,7.35011420946695e-05
+"WASS 2018","merged","species","Melosira nummuloides",523,176868,0.00295700748580863
+"WASS 2018","merged","species","Praya dubia",39,176868,0.000220503426284008
+"WASS 2018","reverse","genus","Balanus",8,186664,4.28577551107873e-05
+"WASS 2018","reverse","genus","Hemigrapsus",30281,186664,0.162221960313719
+"WASS 2018","reverse","species","Cyclotella sp. MBTD-CMFRI-S080",13,186664,6.96438520550294e-05
+"WASS 2018","reverse","species","Hemigrapsus oregonensis",155688,186664,0.834054772211032
+"WASS 2018","reverse","species","Hydraena lapidicola",24,186664,0.000128573265332362
+"WASS 2018","reverse","species","Melosira nummuloides",528,186664,0.00282861183731196
+"WASS 2018","reverse","species","Praya dubia",39,186664,0.000208931556165088
+"WASS 2018","reverse","species","Pyrisitia nise",16,186664,8.57155102215746e-05
+"WASS 2018","reverse","species","Stegodyphus lineatus",67,186664,0.000358933699052844
+"WASS 2020","forward","species","Hemigrapsus oregonensis",27938,27953,0.999463384967624
+"WASS 2020","forward","species","uncultured Bangiophyceae",15,27953,0.000536615032375774
+"WASS 2020","merged","species","Euglossa igniventris",11,25500,0.000431372549019608
+"WASS 2020","merged","species","Hemigrapsus oregonensis",25477,25500,0.999098039215686
+"WASS 2020","merged","species","uncultured Bangiophyceae",12,25500,0.000470588235294118
+"WASS 2020","reverse","species","Hemigrapsus oregonensis",25715,25715,1

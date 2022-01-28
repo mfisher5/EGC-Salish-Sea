@@ -1,0 +1,612 @@
+---
+title: "Community Level PCR & Bottle Variation via Bray-Curtis"
+author: "M Fisher, via Helen Casendino, Joe Duprey, Kai Vennemann"
+date: "1/28/2021"
+output: 
+  html_document:
+    toc: yes
+---
+
+# Description
+
+This script is adapted from [comm_var_braycurtis.Rmd](https://github.com/jdduprey/PCR.variation/blob/main/code/COMM_level/comm_var_braycurtis.Rmd), written by Helen Casendino, Joe Duprey, Kai Vennemann. 
+
+For the lane 1 sequencing data, I am primarily interested in variability between technical replicates.
+
+It "creates distributions of variability among technical (PCR) and biological (crab) replicates at the community level. As a metric for community variability, we apply the Bray-Curtis dissimilarity (BCD) from the vegdist() function in the vegan library.
+
+For the biological replicate level (variation between crabs within sampling event), there is no averaging across PCRs; i.e., we are collecting pairwise BC distances among A.1, A.2, A.3, B.1, B.2, etc. To avoid tabulating intra-crab PCR variation when looking at the bio replicate level, we will only harvest pairwise distances between communities in *different* crabs, i.e., take the pairwise distance between A.1 and B.1, B.2, B.3, but not between A.1 and A.2, A.3."
+
+
+# Set up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This script requires the following packages...
+```{r dependencies, include=FALSE}
+library(tidyverse)
+library(here)
+library(magrittr)
+library(vegan)
+library(stringi)
+library(cowplot)
+```
+<br>
+
+And calls these custom functions.
+```{r}
+source(here('R','cvt_to_PCR_props.R'))
+source(here('R','find_PCR_BCDs.R'))
+source(here('R','find_bottle_BCDs.R'))
+```
+<br>
+
+Specify user directories
+```{r}
+indir_asv    <- 'test-lane-1/data/dada2'
+indir_meta   <- 'test-lane-1/data/cutadapt'
+outdir       <- 'test-lane-1/results'
+```
+<br>
+<br>
+
+# BF3
+
+```{r}
+marker <- "BF3"
+```
+<br>
+
+## Step 1: Read in the data.
+
+The data should be in a .csv file with the following columns: `seq_run`,`site`,`bio`,`tech`,`hash`,`reads`. "Bio" refers to the biological replicate (crabs), and "tech" refers to the PCR technical replicate. 
+
+This file can be created using the ASV table output from DADA2, and the sampling metadata file.
+```{r read in asvs1, include=FALSE}
+asv1 <- read_csv(here(indir_asv,marker, 'merged_ASV_table.csv'))
+```
+<br>
+
+```{r read in metadat1, include=FALSE}
+metadat1 <- read_csv(here(indir_meta, marker, paste0('cutadapt_output_metadata_',marker,'.csv')))
+
+metadat1 %<>% dplyr::select(Sample_name, file1) %>%
+  # from the file name, get the sample ID
+  mutate(SampleID=str_remove(file1,"_L001_R1_001.fastq.fastq")) %>%
+  mutate(SampleID=str_remove(SampleID,paste0("Locus_",marker,"_",marker,"_"))) %>%
+  mutate(SampleID=str_sub(SampleID,start=1, end=-5)) %>%
+  # from the sample ID, get the site, crab ID (bio), and replicate (tech)
+  mutate(site=ifelse(SampleID %in% c("Kangaroo","PCRNegative","SpeedVacNegative"), "Control", str_sub(SampleID, start=1,end=4))) %>%
+  mutate(site=ifelse(site!="WASS",site,ifelse(grepl("2020",SampleID),"WASS 2020", "WASS 2018"))) %>%
+  separate(col=SampleID, into=c("bio","tech"), sep=-1,remove=FALSE) %>%
+  mutate(tech=as.numeric(as.factor(tolower(tech)))) %>%
+  filter(site != "Control") %>%
+  dplyr::select(-file1)
+
+# clean up tech column (some are upper case), and the extra tech replicate I have for one of my crabs.
+metadat1[which(metadat1$SampleID=="WASS_2020_190a_25uL"),"bio"] <- "WASS_2020_190"
+metadat1[which(metadat1$SampleID=="WASS_2020_190a_25uL"),"tech"] <- 4
+```
+<br>
+
+```{r make dat1}
+dat.bf3 <- left_join(asv1,metadat1,by="Sample_name") %>%
+  # remove controls
+  filter(!is.na(bio)) %>%
+  # format data
+  mutate(seq_run=1) %>%
+  rename(hash=Hash, reads=nReads) %>%
+  dplyr::select(seq_run,site,bio,tech,hash,reads)
+```
+<br>
+
+Some QC: check to make sure that each of the biological replicates has 2 or more PCR replicates. If not, remove that sample.
+```{r echo=FALSE}
+checkdat <- dat.bf3 %>% group_by(bio) %>% summarise(nPCR=length(unique(tech)))
+if(any(checkdat$nPCR < 2)){
+  removedat <- filter(checkdat,nPCR<2)
+  message("removing the following sample(s) without PCR replicates: ", paste0(removedat$bio,collapse=","))
+  dat.bf3 %<>% filter(!(bio %in% removedat$bio))
+  checkdat <- dat.bf3 %>% group_by(bio) %>% summarise(nPCR=length(unique(tech)))
+  message("any remaining samples to remove? ", paste0(any(checkdat$nPCR < 2)))
+} else{"all biological replicates have at least two or more PCR replicates. data ready for processing."}
+```
+<br>
+
+
+## Step 2: Quantify variation among technical replicates.
+
+The find_PCR_BCDs function computes the pairwise Bray-Curtis dissimilarities (BCDs) among technical replicates within each biological sample, stores all obtained values in a numeric vector, and plots those values in a histogram. The function allows the user to specify which sequence runs should be analyzed (by default, all will be used), hence the seq_runs vector parameter. Note that we first convert reads into proportions (by PCR) before calculating BCDs.
+
+```{r find_PCR_BCDs1}
+PCR_output <- find_PCR_BCDs(dat.bf3)
+```
+<br>
+
+```{r echo=FALSE, fig.width=7,fig.height=4}
+PCR_output[[2]]
+```
+<br>
+
+
+For my data, I want to know which BCDs are associated with which sample (bio) and site. I've adapted the function above to allow this:
+```{r}
+pairwise.dat <- PCR_output[[3]]
+colnames(pairwise.dat)
+```
+<br>
+
+```{r echo=FALSE, fig.width=7,fig.height=4}
+ggplot(data=pairwise.dat, aes(x=bio, y=bcd, col=site)) +
+    geom_point(shape=8) +
+  stat_summary(geom = "point",fun = "mean",col = "black",shape=21,size=3) +
+    labs(x="Samples", y="Pairwise Bray-Curtis Dissimilarities", title="PCR Variation, BF3") +
+    theme_bw() + theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=1))
+```
+<br>
+<br>
+
+
+## Step 3: Quantify variation among biological replicates.
+
+Here we create a function that computes the pairwise Bray-Curtis dissimilarities among replicates from separate bottles (but from same sampling event). We do not average across PCRs. Note that we first convert reads into proportions (by PCR) before calculating BCDs.
+
+```{r eval=FALSE, find_bottle_BCDs1}
+bottle_output <- find_bottle_BCDs(dat.bf3)
+```
+<br>
+<br>
+
+
+# Leray
+
+```{r}
+marker <- "Leray"
+```
+<br>
+
+## Step 1: Read in the data.
+
+The data should be in a .csv file with the following columns: `seq_run`,`site`,`bio`,`tech`,`hash`,`reads`. "Bio" refers to the biological replicate (crabs), and "tech" refers to the PCR technical replicate. 
+
+This file can be created using the ASV table output from DADA2, and the sampling metadata file.
+```{r read in asvs2, include=FALSE}
+asv2 <- read_csv(here(indir_asv,marker, 'merged_ASV_table.csv'))
+```
+<br>
+
+```{r read in metadat2, include=FALSE}
+metadat2 <- read_csv(here(indir_meta, marker, paste0('cutadapt_output_metadata_',marker,'.csv')))
+
+metadat2 %<>% dplyr::select(Sample_name, file1) %>%
+  # from the file name, get the sample ID
+  mutate(SampleID=str_remove(file1,"_L001_R1_001.fastq.fastq")) %>%
+  mutate(SampleID=str_remove(SampleID,paste0("Locus_",marker,"_",marker,"_"))) %>%
+  mutate(SampleID=ifelse(Sample_name >= 10, str_sub(SampleID,start=1, end=-5),
+                         str_sub(SampleID,start=1, end=-4))) %>%
+  # from the sample ID, get the site, crab ID (bio), and replicate (tech)
+  mutate(site=ifelse(SampleID %in% c("Kangaroo","PCRNegative","SpeedVacNegative"), "Control", str_sub(SampleID, start=1,end=4))) %>%
+  mutate(site=ifelse(site!="WASS",site,ifelse(grepl("2020",SampleID),"WASS 2020", "WASS 2018"))) %>%
+  separate(col=SampleID, into=c("bio","tech"), sep=-1,remove=FALSE) %>%
+  mutate(tech=as.numeric(as.factor(tolower(tech)))) %>%
+  filter(site != "Control") %>%
+  dplyr::select(-file1)
+```
+<br>
+
+```{r make dat2}
+dat.l <- left_join(asv2,metadat2,by="Sample_name") %>%
+  # remove controls
+  filter(!is.na(bio)) %>%
+  # format data
+  mutate(seq_run=1) %>%
+  rename(hash=Hash, reads=nReads) %>%
+  dplyr::select(seq_run,site,bio,tech,hash,reads)
+```
+<br>
+
+Some QC: check to make sure that each of the biological replicates has 2 or more PCR replicates. If not, remove that sample.
+```{r echo=FALSE}
+checkdat <- dat.l %>% group_by(bio) %>% summarise(nPCR=length(unique(tech)))
+if(any(checkdat$nPCR < 2)){
+  removedat <- filter(checkdat,nPCR<2)
+  message("removing the following sample(s) without PCR replicates: ", paste0(removedat$bio,collapse=","))
+  dat.l %<>% filter(!(bio %in% removedat$bio))
+  checkdat <- dat.l %>% group_by(bio) %>% summarise(nPCR=length(unique(tech)))
+  message("any remaining samples to remove? ", paste0(any(checkdat$nPCR < 2)))
+} else{message("all biological replicates have at least two or more PCR replicates. data ready for processing.")}
+```
+<br>
+
+
+## Step 2: Quantify variation among technical replicates.
+
+The find_PCR_BCDs function computes the pairwise Bray-Curtis dissimilarities (BCDs) among technical replicates within each biological sample, stores all obtained values in a numeric vector, and plots those values in a histogram. The function allows the user to specify which sequence runs should be analyzed (by default, all will be used), hence the seq_runs vector parameter. Note that we first convert reads into proportions (by PCR) before calculating BCDs.
+
+```{r run find_PCR_BCDs2}
+PCR_output.l <- find_PCR_BCDs(dat.l)
+```
+<br>
+
+```{r echo=FALSE, fig.width=7,fig.height=4}
+PCR_output.l[[2]]
+```
+<br>
+
+
+For my data, I want to know which BCDs are associated with which sample (bio) and site. I've adapted the function above to allow this:
+```{r}
+pairwise.dat.l <- PCR_output.l[[3]]
+colnames(pairwise.dat.l)
+```
+<br>
+
+```{r echo=FALSE, fig.width=7,fig.height=4}
+ggplot(data=pairwise.dat.l, aes(x=bio, y=bcd, col=site)) +
+    geom_point(shape=8) +
+  stat_summary(geom = "point",fun = "mean",col = "black",shape=21,size=3) +
+    labs(x="Samples", y="Pairwise Bray-Curtis Dissimilarities", title="PCR Variation, Leray") +
+    theme_bw() + theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=1))
+```
+<br>
+<br>
+
+
+## Step 3: Quantify variation among biological replicates.
+
+Here we create a function that computes the pairwise Bray-Curtis dissimilarities among replicates from separate bottles (but from same sampling event). We do not average across PCRs. Note that we first convert reads into proportions (by PCR) before calculating BCDs.
+
+```{r eval=FALSE, find_bottle_BCDs2}
+bottle_output <- find_bottle_BCDs(dat.bf3)
+```
+<br>
+<br>
+
+# LerayXT
+
+```{r}
+marker <- "LerayXT"
+```
+<br>
+
+## Step 1: Read in the data.
+
+The data should be in a .csv file with the following columns: `seq_run`,`site`,`bio`,`tech`,`hash`,`reads`. "Bio" refers to the biological replicate (crabs), and "tech" refers to the PCR technical replicate. 
+
+This file can be created using the ASV table output from DADA2, and the sampling metadata file.
+```{r read in asvs3, include=FALSE}
+asv3 <- read_csv(here(indir_asv,marker, 'merged_ASV_table.csv'))
+```
+<br>
+
+```{r read in metadat3, include=FALSE}
+metadat3 <- read_csv(here(indir_meta, marker, paste0('cutadapt_output_metadata_',marker,'.csv')))
+
+metadat3 %<>% dplyr::select(Sample_name, file1) %>%
+  # from the file name, get the sample ID
+  mutate(SampleID=str_remove(file1,"_L001_R1_001.fastq.fastq")) %>%
+  mutate(SampleID=str_remove(SampleID,paste0("Locus_",marker,"_LXT_"))) %>%
+  mutate(SampleID=str_sub(SampleID,start=1, end=-5)) %>%
+  # from the sample ID, get the site, crab ID (bio), and replicate (tech)
+  mutate(site=ifelse(SampleID %in% c("Kangaroo","PCRNegative","SpeedVacNegative"), "Control", str_sub(SampleID, start=1,end=4))) %>%
+  mutate(site=ifelse(site!="WASS",site,ifelse(grepl("2020",SampleID),"WASS 2020", "WASS 2018"))) %>%
+  separate(col=SampleID, into=c("bio","tech"), sep=-1,remove=FALSE) %>%
+  mutate(tech=as.numeric(as.factor(tolower(tech)))) %>%
+  filter(site != "Control") %>%
+  dplyr::select(-file1)
+```
+<br>
+
+```{r make dat3}
+dat.lxt <- left_join(asv3,metadat3,by="Sample_name") %>%
+  # remove controls
+  filter(!is.na(bio)) %>%
+  # format data
+  mutate(seq_run=1) %>%
+  rename(hash=Hash, reads=nReads) %>%
+  dplyr::select(seq_run,site,bio,tech,hash,reads)
+```
+<br>
+
+Some QC: check to make sure that each of the biological replicates has 2 or more PCR replicates. If not, remove that sample.
+```{r echo=FALSE}
+checkdat <- dat.lxt %>% group_by(bio) %>% summarise(nPCR=length(unique(tech)))
+if(any(checkdat$nPCR < 2)){
+  removedat <- filter(checkdat,nPCR<2)
+  message("removing the following sample(s) without PCR replicates: ", paste0(removedat$bio,collapse=","))
+  dat.lxt %<>% filter(!(bio %in% removedat$bio))
+  checkdat <- dat.lxt %>% group_by(bio) %>% summarise(nPCR=length(unique(tech)))
+  message("any remaining samples to remove? ", paste0(any(checkdat$nPCR < 2)))
+} else{message("all biological replicates have at least two or more PCR replicates. data ready for processing.")}
+```
+<br>
+
+
+## Step 2: Quantify variation among technical replicates.
+
+The find_PCR_BCDs function computes the pairwise Bray-Curtis dissimilarities (BCDs) among technical replicates within each biological sample, stores all obtained values in a numeric vector, and plots those values in a histogram. The function allows the user to specify which sequence runs should be analyzed (by default, all will be used), hence the seq_runs vector parameter. Note that we first convert reads into proportions (by PCR) before calculating BCDs.
+
+```{r find_PCR_BCDs3}
+PCR_output.lxt <- find_PCR_BCDs(dat.lxt)
+```
+<br>
+
+```{r echo=FALSE, fig.width=7,fig.height=4}
+PCR_output.lxt[[2]]
+```
+<br>
+
+
+For my data, I want to know which BCDs are associated with which sample (bio) and site. I've adapted the function above to allow this:
+```{r}
+pairwise.dat.lxt <- PCR_output.lxt[[3]]
+colnames(pairwise.dat.lxt)
+```
+<br>
+
+```{r echo=FALSE, fig.width=7,fig.height=4}
+ggplot(data=pairwise.dat.lxt, aes(x=bio, y=bcd, col=site)) +
+    geom_point(shape=8) +
+  stat_summary(geom = "point",fun = "mean",col = "black",shape=21,size=3) +
+    labs(x="Samples", y="Pairwise Bray-Curtis Dissimilarities", title="PCR Variation, LerayXT") +
+    theme_bw() + theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=1))
+```
+<br>
+<br>
+
+
+## Step 3: Quantify variation among biological replicates.
+
+Here we create a function that computes the pairwise Bray-Curtis dissimilarities among replicates from separate bottles (but from same sampling event). We do not average across PCRs. Note that we first convert reads into proportions (by PCR) before calculating BCDs.
+
+```{r eval=FALSE, find_bottle_BCDs3}
+bottle_output <- find_bottle_BCDs(dat.bf3)
+```
+<br>
+<br>
+
+
+# Compare PCR Var
+
+```{r echo=FALSE, fig.width=10,fig.height=5}
+bplot <- ggplot(data=pairwise.dat, aes(x=bio, y=bcd, col=site)) +
+    geom_point(shape=8) +
+  stat_summary(geom = "point",fun = "mean",col = "black",shape=21,size=3,stroke=2) +
+    labs(x="", y="Pairwise Bray-Curtis Dissimilarities", title="BF3") +
+    theme_bw() + theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=1), legend.position="none")
+lplot <- ggplot(data=pairwise.dat.l, aes(x=bio, y=bcd, col=site)) +
+    geom_point(shape=8) +
+  stat_summary(geom = "point",fun = "mean",col = "black",shape=21,size=3,stroke=2) +
+    labs(x="Samples",title="Leray") +
+    theme_bw() + theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=1), legend.position="none",
+                       axis.title.y=element_blank())
+lxtplot <- ggplot(data=pairwise.dat.lxt, aes(x=bio, y=bcd, col=site)) +
+    geom_point(shape=8) +
+  stat_summary(geom = "point",fun = "mean",col = "black",shape=21,size=3,stroke=2) +
+    labs(x="", title=" LerayXT") +
+    theme_bw() + theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=1),
+                       axis.title.y=element_blank())
+
+
+plot_grid(bplot,lplot,lxtplot,ncol=3, rel_widths=c(0.65,0.6,0.95))
+```
+<br>
+
+
+## WACO switched
+
+Exploring the Blast output, it looks like the following WACO samples were switched with the kangaroo positive control: 
+
+- WACO.2021.001a (BF3, LerayXT)
+- WACO.2021.002a (Leray)
+
+
+I can't find anything in my lab notes that suggests that the indexes were actually switched between these samples, but I'm curious to see how it affects PCR variability.
+
+Edit BF3 data
+```{r echo=FALSE}
+marker='BF3'
+metadat1 <- read_csv(here(indir_meta, marker, paste0('cutadapt_output_metadata_',marker,'.csv')))
+
+metadat1 %<>% dplyr::select(Sample_name, file1) %>%
+  # from the file name, get the sample ID
+  mutate(SampleID=str_remove(file1,"_L001_R1_001.fastq.fastq")) %>%
+  mutate(SampleID=str_remove(SampleID,paste0("Locus_",marker,"_",marker,"_"))) %>%
+  mutate(SampleID=str_sub(SampleID,start=1, end=-5)) %>%
+  # from the sample ID, get the site, crab ID (bio), and replicate (tech)
+  mutate(site=ifelse(SampleID %in% c("Kangaroo","PCRNegative","SpeedVacNegative"), "Control", str_sub(SampleID, start=1,end=4))) %>%
+  mutate(site=ifelse(site!="WASS",site,ifelse(grepl("2020",SampleID),"WASS 2020", "WASS 2018"))) %>%
+  separate(col=SampleID, into=c("bio","tech"), sep=-1,remove=FALSE) %>%
+  mutate(tech=as.numeric(as.factor(tolower(tech)))) %>%
+  dplyr::select(-file1)
+
+# clean up tech column (some are upper case), and the extra tech replicate I have for one of my crabs.
+metadat1[which(metadat1$SampleID=="WASS_2020_190a_25uL"),"bio"] <- "WASS_2020_190"
+metadat1[which(metadat1$SampleID=="WASS_2020_190a_25uL"),"tech"] <- 4
+
+# switch the kangaroo and WACO 001a
+new_roo <- bind_cols(metadat1[which(metadat1$SampleID=="WACO_2021_001a"),"Sample_name"],
+                      metadat1[which(metadat1$SampleID=="Kangaroo"),c("SampleID","bio","tech","site")])
+new_waco <- bind_cols(metadat1[which(metadat1$SampleID=="Kangaroo"),"Sample_name"],
+                     metadat1[which(metadat1$SampleID=="WACO_2021_001a"),c("SampleID","bio","tech","site")])
+metadat1 %<>% filter(!(SampleID %in% c("Kangaroo","WACO_2021_001a"))) %>%
+  bind_rows(new_roo,new_waco) %>%
+  filter(site!="Control")
+print(new_waco)
+
+dat.bf3 <- left_join(asv1,metadat1,by="Sample_name") %>%
+  # remove controls
+  filter(!is.na(bio)) %>%
+  # format data
+  mutate(seq_run=1) %>%
+  rename(hash=Hash, reads=nReads) %>%
+  dplyr::select(seq_run,site,bio,tech,hash,reads)
+
+checkdat <- dat.bf3 %>% group_by(bio) %>% summarise(nPCR=length(unique(tech)))
+if(any(checkdat$nPCR < 2)){
+  removedat <- filter(checkdat,nPCR<2)
+  message("removing the following sample(s) without PCR replicates: ", paste0(removedat$bio,collapse=","))
+  dat.bf3 %<>% filter(!(bio %in% removedat$bio))
+  checkdat <- dat.bf3 %>% group_by(bio) %>% summarise(nPCR=length(unique(tech)))
+  message("any remaining samples to remove? ", paste0(any(checkdat$nPCR < 2)))
+} else{message("all biological replicates have at least two or more PCR replicates. data ready for processing.")}
+```
+<br>
+
+Edit Leray data
+```{r echo=FALSE}
+marker="Leray"
+metadat2 <- read_csv(here(indir_meta, marker, paste0('cutadapt_output_metadata_',marker,'.csv')))
+
+metadat2 %<>% dplyr::select(Sample_name, file1) %>%
+  # from the file name, get the sample ID
+  mutate(SampleID=str_remove(file1,"_L001_R1_001.fastq.fastq")) %>%
+  mutate(SampleID=str_remove(SampleID,paste0("Locus_",marker,"_",marker,"_"))) %>%
+  mutate(SampleID=ifelse(Sample_name >= 10, str_sub(SampleID,start=1, end=-5),
+                         str_sub(SampleID,start=1, end=-4))) %>%
+  # from the sample ID, get the site, crab ID (bio), and replicate (tech)
+  mutate(site=ifelse(SampleID %in% c("Kangaroo","PCRNegative","SpeedVacNegative"), "Control", str_sub(SampleID, start=1,end=4))) %>%
+  mutate(site=ifelse(site!="WASS",site,ifelse(grepl("2020",SampleID),"WASS 2020", "WASS 2018"))) %>%
+  separate(col=SampleID, into=c("bio","tech"), sep=-1,remove=FALSE) %>%
+  mutate(tech=as.numeric(as.factor(tolower(tech)))) %>%
+  dplyr::select(-file1)
+
+# switch the kangaroo and WACO 001a
+new_roo <- bind_cols(metadat2[which(metadat2$SampleID=="WACO_2021_002a"),"Sample_name"],
+                      metadat2[which(metadat2$SampleID=="Kangaroo"),c("SampleID","bio","tech","site")])
+new_waco <- bind_cols(metadat2[which(metadat2$SampleID=="Kangaroo"),"Sample_name"],
+                     metadat2[which(metadat2$SampleID=="WACO_2021_002a"),c("SampleID","bio","tech","site")])
+metadat2 %<>% filter(!(SampleID %in% c("Kangaroo","WACO_2021_002a"))) %>%
+  bind_rows(new_roo,new_waco) %>%
+  filter(site!="Control")
+print(new_waco)
+
+
+dat.l <- left_join(asv2,metadat2,by="Sample_name") %>%
+  # remove controls
+  filter(!is.na(bio)) %>%
+  # format data
+  mutate(seq_run=1) %>%
+  rename(hash=Hash, reads=nReads) %>%
+  dplyr::select(seq_run,site,bio,tech,hash,reads)
+
+checkdat <- dat.l %>% group_by(bio) %>% summarise(nPCR=length(unique(tech)))
+if(any(checkdat$nPCR < 2)){
+  removedat <- filter(checkdat,nPCR<2)
+  message("removing the following sample(s) without PCR replicates: ", paste0(removedat$bio,collapse=","))
+  dat.l %<>% filter(!(bio %in% removedat$bio))
+  checkdat <- dat.l %>% group_by(bio) %>% summarise(nPCR=length(unique(tech)))
+  message("any remaining samples to remove? ", paste0(any(checkdat$nPCR < 2)))
+} else{message("all biological replicates have at least two or more PCR replicates. data ready for processing.")}
+```
+<br>
+
+Edit LerayXT data
+```{r echo=FALSE}
+marker <- "LerayXT"
+metadat3 <- read_csv(here(indir_meta, marker, paste0('cutadapt_output_metadata_',marker,'.csv')))
+
+metadat3 %<>% dplyr::select(Sample_name, file1) %>%
+  # from the file name, get the sample ID
+  mutate(SampleID=str_remove(file1,"_L001_R1_001.fastq.fastq")) %>%
+  mutate(SampleID=str_remove(SampleID,paste0("Locus_",marker,"_LXT_"))) %>%
+  mutate(SampleID=str_sub(SampleID,start=1, end=-5)) %>%
+  # from the sample ID, get the site, crab ID (bio), and replicate (tech)
+  mutate(site=ifelse(SampleID %in% c("Kangaroo","PCRNegative","SpeedVacNegative"), "Control", str_sub(SampleID, start=1,end=4))) %>%
+  mutate(site=ifelse(site!="WASS",site,ifelse(grepl("2020",SampleID),"WASS 2020", "WASS 2018"))) %>%
+  separate(col=SampleID, into=c("bio","tech"), sep=-1,remove=FALSE) %>%
+  mutate(tech=as.numeric(as.factor(tolower(tech)))) %>%
+  dplyr::select(-file1)
+
+# switch the kangaroo and WACO 001a
+new_roo <- bind_cols(metadat3[which(metadat3$SampleID=="WACO_2021_001a"),"Sample_name"],
+                      metadat3[which(metadat3$SampleID=="Kangaroo"),c("SampleID","bio","tech","site")])
+new_waco <- bind_cols(metadat3[which(metadat3$SampleID=="Kangaroo"),"Sample_name"],
+                     metadat3[which(metadat3$SampleID=="WACO_2021_001a"),c("SampleID","bio","tech","site")])
+metadat3 %<>% filter(!(SampleID %in% c("Kangaroo","WACO_2021_001a"))) %>%
+  bind_rows(new_roo,new_waco) %>%
+  filter(site!="Control")
+print(new_waco)
+
+dat.lxt <- left_join(asv3,metadat3,by="Sample_name") %>%
+  # remove controls
+  filter(!is.na(bio)) %>%
+  # format data
+  mutate(seq_run=1) %>%
+  rename(hash=Hash, reads=nReads) %>%
+  dplyr::select(seq_run,site,bio,tech,hash,reads)
+
+checkdat <- dat.lxt %>% group_by(bio) %>% summarise(nPCR=length(unique(tech)))
+if(any(checkdat$nPCR < 2)){
+  removedat <- filter(checkdat,nPCR<2)
+  message("removing the following sample(s) without PCR replicates: ", paste0(removedat$bio,collapse=","))
+  dat.lxt %<>% filter(!(bio %in% removedat$bio))
+  checkdat <- dat.lxt %>% group_by(bio) %>% summarise(nPCR=length(unique(tech)))
+  message("any remaining samples to remove? ", paste0(any(checkdat$nPCR < 2)))
+} else{message("all biological replicates have at least two or more PCR replicates. data ready for processing.")}
+```
+<br>
+
+Re-run the function `find_PCR_BCDs` for each marker
+```{r rerun_PCR_BCDs}
+PCR_output.b2 <- find_PCR_BCDs(dat.bf3)
+pairwise.dat.b2 <- PCR_output.b2[[3]]
+PCR_output.l2 <- find_PCR_BCDs(dat.l)
+pairwise.dat.l2 <- PCR_output.l2[[3]]
+PCR_output.lxt2 <- find_PCR_BCDs(dat.lxt)
+pairwise.dat.lxt2 <- PCR_output.lxt2[[3]]
+```
+<br>
+
+```{r echo=FALSE, fig.width=10,fig.height=5}
+bplot <- ggplot(data=pairwise.dat.b2, aes(x=bio, y=bcd, col=site)) +
+    geom_point(shape=8) +
+  stat_summary(geom = "point",fun = "mean",col = "black",shape=21,size=3,stroke=2) +
+    labs(x="", y="Pairwise Bray-Curtis Dissimilarities", title="BF3") +
+    theme_bw() + theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=1), legend.position="none")
+lplot <- ggplot(data=pairwise.dat.l2, aes(x=bio, y=bcd, col=site)) +
+    geom_point(shape=8) +
+  stat_summary(geom = "point",fun = "mean",col = "black",shape=21,size=3,stroke=2) +
+    labs(x="Samples",title="Leray") +
+    theme_bw() + theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=1), legend.position="none",
+                       axis.title.y=element_blank())
+lxtplot <- ggplot(data=pairwise.dat.lxt2, aes(x=bio, y=bcd, col=site)) +
+    geom_point(shape=8) +
+  stat_summary(geom = "point",fun = "mean",col = "black",shape=21,size=3,stroke=2) +
+    labs(x="", title=" LerayXT") +
+    theme_bw() + theme(axis.text.x=element_text(angle=90,vjust=0.5,hjust=1),
+                       axis.title.y=element_blank())
+
+
+plot_grid(bplot,lplot,lxtplot,ncol=3, rel_widths=c(0.65,0.6,0.95))
+```
+<br>
+<br>
+
+# Compare Bio Var
+
+
+
+## WACO-MARPT switched
+Exploring the Blast output, the following WACO samples had large amounts of Dungy DNA:
+
+- **BF3**: WACO.2021.001b/c and WACO2021.002a (MARPT.01a/b and MARPT.02a in data set)
+- **Leray**: WACO.2021.002a/b/c (MARPT.01a/b in data set)
+- **LerayXT**: WACO.2021.001b/c and WACO2021.002a/b (MARPT.01a/b and MARPT.02a/b in data set)
+ 
+I can't find anything in my lab notes that suggests that the indexes were actually switched between these samples, but I'm curious to see how it affects Biological Replicate variability. 
+
+
+
+
+
+
+
+
+
+
+
+
+
