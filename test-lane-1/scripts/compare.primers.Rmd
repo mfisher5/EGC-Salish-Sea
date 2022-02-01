@@ -62,7 +62,7 @@ suffix2 <- 'blast_multipleIDs_taxonomy.csv'
 ## Data
 
 To answer this question, we need both the ASV table and the Blast taxonomy. 
-```{r message=FALSE, warning=TRUE}
+```{r message=FALSE}
 asv.b   <- read_csv(here(indir_asv,'BF3', 'merged_ASV_table.csv'))
 asv.l   <- read_csv(here(indir_asv,'Leray', 'merged_ASV_table.csv'))
 asv.lxt <- read_csv(here(indir_asv,'LerayXT', 'merged_ASV_table.csv'))
@@ -70,7 +70,7 @@ asv.lxt <- read_csv(here(indir_asv,'LerayXT', 'merged_ASV_table.csv'))
 <br>
 
 Note that the processed blast taxonomy files have results from forward-only, reverse-only, and merged reads. for this comparison, let's focus only on merged reads.
-```{r message=FALSE, warning=TRUE}
+```{r message=FALSE}
 tax_key.b <- read_csv(here(indir_blast, paste0("lane1_bf3_",suffix2))) %>%
   rename("Hash"=representative)
 tax_key.b %<>%  bind_rows(read_csv(here(indir_blast, paste0("lane1_bf3_",suffix1))) %>%
@@ -176,10 +176,49 @@ Just realizing now that since BF3 and Leray/LerayXT are different lengths, obvio
 
 
 ### Leray v LerayXT
-Diving deeper into the comparisons between Leray and LerayXT, let's find proportion of hashes shared per sample.
 
+Diving deeper into the comparisons between Leray and LerayXT, let's find proportion of hashes shared per sample, and resulting proportion of reads from shared hashes.
+
+```{r, message=FALSE}
+l.lxt.share <- all_dat %>%
+  filter(Locus %in% c("Leray","LerayXT")) %>%
+  dplyr::select(SampleID,Locus,Hash) %>%
+  distinct() %>%
+  pivot_wider(names_from=Locus, values_from=Hash) %>%
+  mutate(shared_hashes=map2(Leray,LerayXT, ~intersect(.x,.y))) %>%
+  mutate(n_shared_hashes = lengths(shared_hashes))
+```
+```{r echo=FALSE}
+l.lxt.prop.share <- l.lxt.share %>%
+  dplyr::select(SampleID, n_shared_hashes) %>%
+  left_join(all_dat %>%
+              filter(Locus %in% c("Leray","LerayXT")) %>%
+              group_by(SampleID,site,Locus) %>%
+              summarise(n_hashes=length(unique(Hash))) %>%
+              distinct(), by="SampleID") %>%
+  mutate(prop_shared_hashes=n_shared_hashes/n_hashes)
+
+ggplot(l.lxt.prop.share, aes(x=SampleID,y=prop_shared_hashes)) +
+  geom_col() +
+  facet_grid(rows=vars(Locus), cols=vars(site), scales="free") +
+  ylim(c(0,1)) +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+What is the taxonomy of the shared hashes?
 ```{r}
 ```
+<br>
+
+
+### Shared reverse hashes
+
+The reverse primers for each of my three primer sets reads the same sequence. So how many hashes associated with the reverse sequences from PE sequencing are shared between the primer sets?
+
+
+
+<br>
 <br>
 
 ## Missing Taxonomy
@@ -211,7 +250,7 @@ all_dat2 <- filter(all_dat, !is.na(rank))
 ## Non-Target DNA
 
 Which primers amplified the most bacterial / amoeba DNA? **BF3**
-```{r echo=FALSE, message=FALSE, fig.height=3,fig.width=8}
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3,fig.width=8}
 nontarget_taxa <- c("Actinobacteria","Bacteroidetes","Planctomycetes","Proteobacteria","Discosea")
 nontarget_dat <- all_dat2 %>%
   group_by(Locus,site) %>%
@@ -228,6 +267,30 @@ ggplot(nontarget_dat,aes(x=Locus,y=preads)) +
   theme_bw()
 ```
 <br>
+
+```{r}
+all_dat3 <- all_dat2 %>% filter(!(phylum %in% c(nontarget_taxa))) %>%
+  filter(class!="Mammalia")
+```
+<br>
+
+Take a quick look at the controls...
+```{r echo=FALSE, fig.height=4}
+ggplot(data=filter(all_dat3, site=="Control"), aes(x=Locus, y=nReads, fill=taxon)) +
+  geom_col() +
+   facet_wrap(~SampleID) +
+  ggtitle("Taxa") +
+  theme_bw()
+```
+<br>
+Non-bacterial species in the negative control:
+
+- *Planosiphon gracilis*, a brown algae
+- *Bangiophyceae* (class; phylum=Rhodophyta), a red algae
+- *Dothideomycetes*, a fungus
+- *Candida viswanathii*, a yeast
+
+<br>
 <br>
 
 
@@ -237,7 +300,7 @@ ggplot(nontarget_dat,aes(x=Locus,y=preads)) +
 
 Get only the Green Crab samples, and ignore hashes with missing taxonomic information.
 ```{r echo=FALSE}
-egc_dat <- filter(all_dat, site %in% c("WACO","WASS 2018","WASS 2020") & !is.na(rank))
+egc_dat <- filter(all_dat3, site %in% c("WACO","WASS 2018","WASS 2020"))
 unique(egc_dat$crab)
 
 egc_rps <- egc_dat %>%
@@ -253,7 +316,7 @@ egc_rpsite <- egc_dat %>%
 
 Which primer amplified the least Green Crab DNA? **LerayXT**
 
-The most Green Crab DNA? **BF3** for WASS 2020, and **Leray** otherwise.
+The most Green Crab DNA? **BF3** for WASS 2020 and WASS 2018, and **Leray** otherwise.
 
 ```{r echo=FALSE, message=FALSE, fig.width=6,fig.height=5}
 egc_pred <- egc_dat %>%
@@ -291,7 +354,7 @@ ggplot(data=filter(egc_pred, Predator==1), aes(x=SampleID,y=pReads,fill=as.facto
 <br>
 
 ```{r}
-egc_dat2 <- filter(all_dat2, site %in% c("WACO","WASS 2018","WASS 2020")) %>%
+egc_dat2 <- filter(all_dat3, site %in% c("WACO","WASS 2018","WASS 2020")) %>%
   mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | 
                            genus == "Carcinus",1,0)) %>%
   filter(Predator==0 | is.na(Predator))
@@ -303,7 +366,7 @@ egc_dat2 <- filter(all_dat2, site %in% c("WACO","WASS 2018","WASS 2020")) %>%
 
 Get only the Dungy samples, and ignore hashes with missing taxonomic information.
 ```{r echo=FALSE}
-dungy_dat <- filter(all_dat2, site %in% c("MARP"))
+dungy_dat <- filter(all_dat3, site %in% c("MARP"))
 unique(dungy_dat$crab)
 
 dungy_rps <- dungy_dat %>%
@@ -342,38 +405,360 @@ dungy_pred <- dungy_dat %>%
 ggplot(data=dungy_pred, aes(x=SampleID,y=pReads,fill=as.factor(Predator))) +
   geom_col() +
   facet_grid(cols=vars(Locus), scales="free") +
-  scale_fill_manual(values=c("darkblue","maroon","grey58"), name="Predator") +
+  scale_fill_manual(values=c("darkblue","maroon","grey58"), name="Green Crab") +
   ggtitle("By Sample") +
   theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
 ```
+<br>
 
+```{r}
+dungy_dat2 <- dungy_dat %>%
+  mutate(EGC=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | 
+                           genus == "Carcinus",1,0)) %>%
+  filter(EGC==0  | is.na(EGC))
+```
 <br>
 <br>
+
 
 ## Prey Composition: diversity
 
 ### EGC
 
-**How did diversity of phyla / species differ between primers?**
+**How did diversity of phyla / taxa (family/genus/species) differ between primers?**
+```{r echo=FALSE, fig.height=4,fig.width=5}
+egc_phy_div <- egc_dat2 %>% 
+  group_by(Locus, site) %>%
+  summarise(n_phyla=length(unique(phylum)), .groups="drop")
 
-**What species were captured by only 1-2 primers?**
+ggplot(egc_phy_div, aes(x=site,y=n_phyla,fill=Locus)) +
+  geom_col(position="dodge") +
+  scale_fill_manual(values=c("forestgreen","dodgerblue4","deepskyblue2")) +
+  labs(y="Count", x="Group", title="Phyla") +
+  theme_bw()
+```
+<br>
+
+Unique phyla: `r paste0(unique(egc_dat2$phylum),collapse=", ")`
+<br>
+
+```{r echo=FALSE, fig.height=4,fig.width=5}
+egc_tax_div <- egc_dat2 %>% 
+  filter(rank %in% c("family","genus","species")) %>%
+  group_by(Locus, site) %>%
+  summarise(n_tax=length(unique(taxon)), .groups="drop")
+
+ggplot(egc_tax_div, aes(x=site,y=n_tax,fill=Locus)) +
+  geom_col(position="dodge") +
+  scale_fill_manual(values=c("forestgreen","dodgerblue4","deepskyblue2")) +
+  labs(y="Count", x="Group", title="Taxa", subtitle="*excluding sequences not identified down to family") +
+  theme_bw()
+```
+<br>
+
+
 
 
 ### Dungies
+**How did diversity of phyla / taxa (family/genus/species) differ between primers?**
+```{r echo=FALSE, fig.height=4,fig.width=5}
+dungy_phy_div <- dungy_dat2 %>% 
+  group_by(Locus, site) %>%
+  summarise(n_phyla=length(unique(phylum)), .groups="drop")
 
+ggplot(dungy_phy_div, aes(x=site,y=n_phyla,fill=Locus)) +
+  geom_col(position="dodge") +
+  scale_fill_manual(values=c("forestgreen","dodgerblue4","deepskyblue2")) +
+  labs(y="Count", x="Group", title="Phyla") +
+  theme_bw()
+```
+<br>
+
+Unique phyla: `r paste0(unique(dungy_dat2$phylum),collapse=", ")`
+<br>
+
+```{r echo=FALSE, fig.height=4,fig.width=5}
+dungy_tax_div <- dungy_dat2 %>% 
+  filter(!is.na(family) | !is.na(species)) %>%
+  group_by(Locus, site) %>%
+  summarise(n_tax=length(unique(taxon)), .groups="drop")
+
+ggplot(dungy_tax_div, aes(x=site,y=n_tax,fill=Locus)) +
+  geom_col(position="dodge") +
+  scale_fill_manual(values=c("forestgreen","deepskyblue2")) +
+  labs(y="Count", x="Group", title="Taxa", subtitle="*excluding sequences not identified down to family") +
+  theme_bw()
+```
+<br>
+```{r echo=FALSE, eval=FALSE}
+dungy_dat2 %>% 
+  filter(!is.na(family) | !is.na(species)) %>%
+  dplyr::select(Locus,taxon, rank, nReads,phylum, class, order, family)
+```
+<br>
+<br>
 
 ## Prey Composition: specificity
 
-### Overview
+### EGC: Overview
 
-For each phylum / class, which primer was able to detect the most ASVs down to the species level?
+**Which primer was able to detect the most ASVs down to the species level?**
+```{r echo=FALSE, fig.height=4}
+egc_specificity <- egc_dat2 %>%
+  group_by(Locus, site, rank) %>%
+  summarise(n_ASVs=length(unique(taxon)),.groups="drop") %>%
+  left_join(egc_dat2 %>%
+              group_by(Locus, site) %>%
+              summarise(site_ASVs=length(unique(taxon)),.groups="drop"), by=c("Locus","site")) %>%
+  mutate(prop_site_ASVs=n_ASVs/site_ASVs)
 
-### Willapa Bay 
+egc_specificity$rank <- factor(egc_specificity$rank, levels=c("class","order","family","genus","species"))
 
-species of interest: Cancer magister; Ruditapes
+ggplot(egc_specificity, aes(x=Locus, y=prop_site_ASVs,fill=rank)) +
+  geom_col() +
+  facet_grid(cols=vars(site), scales="free") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+
+**For Arthropods, Molluscs, and Worms, which primer was able to detect the most ASVs down to the species level?** it varies by group and phylum. BF3 did best with arthropods and molluscs, but it didn't pick up annelids and did worse than LerayXT in the WASS 2018 samples.
+
+```{r echo=FALSE, message=FALSE}
+egc_specificity <- egc_dat2 %>%
+  group_by(Locus, site, phylum, rank) %>%
+  summarise(n_ASVs=length(unique(taxon))) %>%
+  left_join(egc_dat2 %>%
+              group_by(Locus, site, phylum) %>%
+              summarise(site_ASVs=length(unique(taxon))), by=c("Locus","site","phylum")) %>%
+  mutate(prop_site_ASVs=n_ASVs/site_ASVs) %>%
+  filter(phylum %in% c("Arthropoda","Mollusca","Annelida"))
+egc_specificity$rank <- factor(egc_specificity$rank, levels=c("class","order","family","genus","species"))
+ggplot(egc_specificity, aes(x=Locus, y=prop_site_ASVs,fill=rank)) +
+  geom_col() +
+  facet_grid(cols=vars(site), rows=vars(phylum), scales="free") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+
+**What taxa (family/genus/species) were captured by only 1-2 primers?**
+```{r echo=FALSE, fig.height=4,fig.width=7}
+egc_tax_summary <- egc_dat2 %>%
+  filter(rank %in% c("family","genus","species")) %>%
+  group_by(phylum, taxon, rank) %>%
+  summarise(loci=paste0(sort(unique(Locus)), collapse="-"), .groups="drop") %>%
+  group_by(phylum, loci) %>%
+  summarise(n_taxa=length(unique(taxon)), .groups="drop") %>%
+  filter(loci!="BF3-Leray-LerayXT")
+
+egc_tax_summary$loci <- factor(egc_tax_summary$loci, levels=c("BF3","Leray","LerayXT",
+                                                              "BF3-Leray","BF3-LerayXT",
+                                                              "Leray-LerayXT"))
+
+ggplot(egc_tax_summary, aes(x=loci, y=n_taxa, fill=phylum)) +
+  geom_col() +
+  labs(x="", y="Number of Taxa") +
+  theme_bw()
+```
+<br>
+
+```{r echo=FALSE, fig.height=3,fig.width=7}
+egc_tax_summary <- egc_dat2 %>%
+  filter(rank %in% c("family","genus","species")) %>%
+  filter(is.na(phylum) | phylum=="Arthropoda") %>%
+  group_by(class, taxon, rank) %>%
+  summarise(loci=paste0(sort(unique(Locus)), collapse="-"), .groups="drop") %>%
+  group_by(class, loci) %>%
+  summarise(n_taxa=length(unique(taxon)), .groups="drop") %>%
+  filter(loci!="BF3-Leray-LerayXT")
+
+egc_tax_summary$loci <- factor(egc_tax_summary$loci, levels=c("BF3","Leray","LerayXT",
+                                                              "BF3-Leray","BF3-LerayXT",
+                                                              "Leray-LerayXT"))
+
+ggplot(egc_tax_summary, aes(x=loci, y=n_taxa, fill=class)) +
+  geom_col() +
+  labs(x="", y="Number of Taxa", title="Arthropods & Unknown Phyla") +
+  theme_bw()
+```
+<br>
+<br>
+BF3 is picking up ostracods and a type of microscopic algae; Leray/LerayXT are picking up insects, barnacles (Leray down to species, LerayXT just *Balanus*); Leray is picking up some non-specific *malacostraca*...
+*Note - Dinophyceae >> Syndiniales >> Hematodinium are dinoflagellates that are internal parasites of crustaceans.*
+
+<br>
+```{r eval=FALSE, echo=FALSE}
+egc_tax_summary <- egc_dat2 %>%
+  filter(rank %in% c("family","genus","species")) %>%
+  group_by(taxon, rank) %>%
+  summarise(loci=paste0(sort(unique(Locus)), collapse="-"), .groups="drop") %>%
+  filter(loci != "BF3-Leray-LerayXT") %>%
+  left_join(dplyr::select(egc_dat2, rank,kingdom,phylum,class,order,family,genus,species,taxon) %>% distinct(), by=c("rank","taxon")) %>%
+  arrange(loci, rank)
+
+egc_tax_summary
+```
+<br>
+
+
+### Dungy: Overview
+
+**Which primer was able to detect the most ASVs down to the species level?**
+```{r echo=FALSE, message=FALSE, fig.height=4}
+dungy_specificity <- dungy_dat2 %>%
+  group_by(Locus, site, phylum, rank) %>%
+  summarise(n_ASVs=length(unique(taxon))) %>%
+  left_join(dungy_dat2 %>%
+              group_by(Locus, site, phylum) %>%
+              summarise(site_ASVs=length(unique(taxon))), by=c("Locus","site","phylum")) %>%
+  mutate(prop_site_ASVs=n_ASVs/site_ASVs)
+dungy_specificity$rank <- factor(dungy_specificity$rank, levels=c("class","order","family","genus","species"))
+ggplot(dungy_specificity, aes(x=phylum, y=prop_site_ASVs,fill=rank)) +
+  geom_col() +
+  facet_grid(rows=vars(Locus), scales="free") +
+  theme_bw() + theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+```
+<br>
 
 
 
+### EGC 
+
+Species of interest: 
+
+**1.** *Cancer (Metacarcinus) magister*
+
+```{r echo=FALSE, message=FALSE}
+egc_cmag <- egc_dat2 %>%
+  filter(taxon=="Metacarcinus magister") %>%
+  group_by(SampleID,site,Locus) %>%
+  summarise(dungy_reads=sum(nReads)) %>%
+  left_join(egc_dat2 %>% group_by(SampleID,site,Locus) %>%
+              summarise(sample_reads=sum(nReads)), by=c("SampleID","site","Locus")) %>%
+  mutate(pReads=dungy_reads/sample_reads) %>%
+  arrange(SampleID, pReads) %>% dplyr::select(SampleID,Locus,pReads)
+egc_cmag
+```
+<br>
+
+
+**2.** *Bivalvia*-- most important is *Ruditapes philippinarium* (Manila clam)
+```{r echo=FALSE, message=FALSE}
+egc_bivalve <- egc_dat2 %>%
+  filter(taxon=="Ruditapes philippinarium" | genus=="Ruditapes" | class=="Bivalvia") %>%
+  group_by(SampleID,site,Locus,taxon,rank) %>%
+  summarise(dungy_reads=sum(nReads)) %>%
+  left_join(egc_dat2 %>% group_by(SampleID,site,Locus) %>%
+              summarise(sample_reads=sum(nReads)), by=c("SampleID","site","Locus")) %>%
+  mutate(pReads=dungy_reads/sample_reads) %>%
+  arrange(SampleID, pReads) %>% dplyr::select(SampleID,Locus,taxon,rank,pReads)
+egc_bivalve
+```
+<br>
+<br>
+
+What about in the forward reads?
+```{r echo=FALSE, message=FALSE}
+# asv and taxon data
+asv.b  <- read_csv(here(indir_asv,'BF3', 'F_ASV_table.csv'))
+tax_key.b <- read_csv(here(indir_blast, paste0("lane1_bf3_",suffix2))) %>%
+  rename("Hash"=representative)
+tax_key.b %<>%  bind_rows(read_csv(here(indir_blast, paste0("lane1_bf3_",suffix1))) %>%
+              rename("Hash"=qseqid) %>%
+                mutate(taxID="unique", score="unique") %>%
+              dplyr::select(all_of(colnames(tax_key.b)))) %>%
+  filter(dataset=="forward")
+bdat   <- left_join(asv.b, tax_key.b,by="Hash")
+
+
+asv.l   <- read_csv(here(indir_asv,'Leray', 'F_ASV_table.csv'))
+tax_key.l <- read_csv(here(indir_blast, paste0("lane1_leray_",suffix2))) %>%
+  rename("Hash"=representative)
+tax_key.l %<>%  bind_rows(read_csv(here(indir_blast, paste0("lane1_leray_",suffix1))) %>%
+              rename("Hash"=qseqid) %>%
+                mutate(taxID="unique", score="unique") %>%
+              dplyr::select(all_of(colnames(tax_key.l)))) %>%
+  filter(dataset=="forward")
+
+asv.lxt <- read_csv(here(indir_asv,'LerayXT', 'F_ASV_table.csv'))
+tax_key.lxt <- read_csv(here(indir_blast, paste0("lane1_lerayxt_",suffix2))) %>%
+  rename("Hash"=representative)
+tax_key.lxt %<>%  bind_rows(read_csv(here(indir_blast, paste0("lane1_lerayxt_",suffix1))) %>%
+              rename("Hash"=qseqid) %>%
+                mutate(taxID="unique", score="unique") %>%
+              dplyr::select(all_of(colnames(tax_key.lxt)))) %>%
+  filter(dataset=="forward")
+
+# connect
+bdat.f   <- left_join(asv.b, tax_key.b,by="Hash")
+ldat.f   <- left_join(asv.l, tax_key.l,by="Hash")
+lxtdat.f <- left_join(asv.lxt, tax_key.lxt,by="Hash")
+```
+
+```{r echo=FALSE, message=FALSE}
+marker    <- c("BF3", "Leray", "LerayXT")
+
+for(m in marker){
+  metadat <- read_csv(here(indir_meta, m, paste0('cutadapt_output_metadata_',m,'.csv')))
+  
+  metadat %<>% dplyr::select(Sample_name, file1) %>%
+  # from the file name, get the sample ID
+  mutate(SampleID=str_remove(file1,"_L001_R1_001.fastq.fastq"))
+  if(m!="LerayXT"){
+    metadat %<>% mutate(SampleID=str_remove(SampleID,paste0("Locus_",m,"_",m,"_")))
+  } else{
+    metadat %<>% mutate(SampleID=str_remove(SampleID,paste0("Locus_",m,"_LXT_")))
+  }
+  metadat %<>% mutate(SampleID=ifelse(Sample_name >= 10, str_sub(SampleID,start=1, end=-5),
+                                      str_sub(SampleID,start=1, end=-4))) %>%
+    # from the sample ID, get the site, crab ID, and replicate (tech)
+    mutate(site=ifelse(SampleID %in% c("Kangaroo","PCRNegative","SpeedVacNegative"), "Control", 
+                       str_sub(SampleID, start=1,end=4))) %>%
+    mutate(site=ifelse(site!="WASS",site,ifelse(grepl("2020",SampleID),"WASS 2020", "WASS 2018"))) %>%
+    separate(col=SampleID, into=c("crab","tech"), sep=-1,remove=FALSE) %>%
+    mutate(tech=tolower(tech)) %>%
+    dplyr::select(-file1)
+  
+  if(m=="BF3"){
+    # clean up the extra tech replicate I have for one of my crabs.
+    metadat[which(metadat$SampleID=="WASS_2020_190a_25uL"),"crab"] <- "WASS_2020_190"
+    metadat[which(metadat$SampleID=="WASS_2020_190a_25uL"),"tech"] <- "d"
+    bdat.f <- left_join(bdat.f,metadat,by="Sample_name")
+  } else if(m=="Leray"){
+    ldat.f <- left_join(ldat.f,metadat,by="Sample_name")
+  } else{
+    lxtdat.f <- left_join(lxtdat.f,metadat,by="Sample_name")
+  }
+  
+}
+```
+
+```{r echo=FALSE}
+forward_dat <- bind_rows(bdat.f,ldat.f,lxtdat.f)
+```
+
+```{r echo=FALSE}
+egc_fdat2 <- forward_dat %>% filter(!is.na(rank)) %>%
+  filter(!(phylum %in% c(nontarget_taxa))) %>%
+  filter(class!="Mammalia") %>%
+  filter(site %in% c("WACO","WASS 2018","WASS 2020")) %>%
+  mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | 
+                           genus == "Carcinus",1,0)) %>%
+  filter(Predator==0 | is.na(Predator))
+```
+
+```{r echo=FALSE, message=FALSE}
+egc_bivalve <- egc_fdat2 %>%
+  filter(taxon=="Ruditapes philippinarium" | genus=="Ruditapes" | class=="Bivalvia") %>%
+  group_by(SampleID,site,Locus,taxon,rank) %>%
+  summarise(dungy_reads=sum(nReads)) %>%
+  left_join(egc_fdat2 %>% group_by(SampleID,site,Locus) %>%
+              summarise(sample_reads=sum(nReads)), by=c("SampleID","site","Locus")) %>%
+  mutate(pReads=dungy_reads/sample_reads) %>%
+  arrange(SampleID, pReads) %>% dplyr::select(SampleID,Locus,taxon,rank,pReads)
+egc_bivalve
+```
 
 
 
