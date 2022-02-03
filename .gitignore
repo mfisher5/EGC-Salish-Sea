@@ -5,19 +5,19 @@ data/raw/*
 
 data/databases/*
 
-test-lane-1/data/*
-!test-lane-1/data/metadata-cutadapt-input-lane1.csv
-!test-lane-1/data/cutadapt/first_try_misnamed_samples.xlsx
-!test-lane-1/data/dada2/BF3/F_ASV_table.csv
-!test-lane-1/data/dada2/BF3/R_ASV_table.csv
-!test-lane-1/data/dada2/BF3/merged_ASV_table.csv
-!test-lane-1/data/dada2/BF3/F_hash_key.csv
-!test-lane-1/data/dada2/BF3/R_hash_key.csv
-!test-lane-1/data/dada2/BF3/merged_hash_key.csv
-!test-lane-1/data/blast/*
+test-run-1/data/*
+!test-run-1/data/metadata-cutadapt-input-lane1.csv
+!test-run-1/data/cutadapt/first_try_misnamed_samples.xlsx
+!test-run-1/data/dada2/BF3/F_ASV_table.csv
+!test-run-1/data/dada2/BF3/R_ASV_table.csv
+!test-run-1/data/dada2/BF3/merged_ASV_table.csv
+!test-run-1/data/dada2/BF3/F_hash_key.csv
+!test-run-1/data/dada2/BF3/R_hash_key.csv
+!test-run-1/data/dada2/BF3/merged_hash_key.csv
+!test-run-1/data/blast/*
 
-test-lane-1/for-Ryan-BLAST.zip
-test-lane-1/for-Ryan-BLAST2.zip
+test-run-1/for-Ryan-BLAST.zip
+test-run-1/for-Ryan-BLAST2.zip
 
 
 R/*.exe

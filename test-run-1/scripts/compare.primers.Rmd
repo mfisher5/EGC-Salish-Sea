@@ -59,6 +59,8 @@ suffix2 <- 'blast_multipleIDs_taxonomy.csv'
 
 # Question 1: Primer Comparison
 
+**Which primer(s) do we want to use for the remainder of the (1) Salish Sea Green crab, (2) Willapa Bay Green crab, and (3) Dungeness crab instars? **
+
 ## Data
 
 To answer this question, we need both the ASV table and the Blast taxonomy. 
@@ -761,8 +763,226 @@ egc_bivalve
 ```
 
 
+<br>
+<br>
+
+# Question 2: WASS 2018 Vial Samples
+
+**Are we getting usable data from the 2018 Salish Sea Green crab samples, which are subsamples of the 95% etOH in which dissected stomachs were stored?**
+
+<br>
+
+## Read Depths
+
+Are the read depths from the 2018 samples noticeably different from the 2020 / 2021 samples? **Yes.**
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+rename_samples <- read_csv(here::here("test-lane-1","data","cutadapt","misnamed_samples.csv"), col_types="cc")
+
+rd_dat <- read_csv(here::here("data","raw","qc","EGC-Salish-Sea_Lane-1_MiSeq-Stats.csv"),col_types="ccii") %>%
+ left_join(rename_samples,by=c("sample"="misnamed_sample")) %>%
+  mutate(corrected_sample=ifelse(!is.na(corrected_sample),corrected_sample,sample)) %>%
+  dplyr::select(-sample) %>%
+  rename(sample=corrected_sample)
+
+rd_dat %<>% separate(col=sample, into=c("primer","group","year","id1","id2"), sep="_", remove=FALSE) %>%
+  # clean up MARPT sample identifiers, which don't have a year
+  mutate(id1=ifelse(group=="MARPT",year,id1)) %>%
+  mutate(year=ifelse(group=="MARPT",2021,year)) %>%
+  filter(group!="PCRNegative" & group!="SpeedVacNegative" & group!="MARPT") %>%
+    mutate(group_year=paste0(group,"_",year))
+
+rd_dat$group_year <- factor(rd_dat$group_year, 
+                    levels=c("WASS_2018","WASS_2020","WACO_2021","Kangaroo_NA"))
+
+### plot
+ggplot(rd_dat, aes(x=group_year, y=total_reads_per_lane/1000, fill=year)) +
+  geom_boxplot(alpha=0.8) +
+  geom_hline(aes(yintercept=70), lty=2, col="grey45") +
+  geom_point(aes(fill=year), alpha=0.4) +
+  facet_wrap(~primer, ncol=3) + 
+  labs(y="Reads per Sample (x1K)", x="Group",
+       title="MiSeq Read Depth") +
+  theme_bw() + theme(axis.text.x=element_text(size=11,angle=90,hjust=1,vjust=0.5),
+                     axis.title=element_text(size=12),
+                     strip.text=element_text(size=11),
+                     title=element_text(size=14))
+
+```
+<br>
+<br>
 
 
+## Missing Taxonomy & Non-Target DNA
+
+Do the 2018 samples have a higher proportion of any of the following, compared to the 2020/2021 samples?
+
+1. missing taxonomy (**not consistently**), 
+2. non-target bacterial or amoeba DNA (**YES for BF3**) 
+3. predator DNA (**on par or less than WASS 2020**)
+
+<br>
+
+```{r echo=FALSE, message=FALSE, fig.height=3,fig.width=8}
+missing_dat <- all_dat %>%
+  group_by(Locus,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop") %>%
+  left_join(filter(all_dat, is.na(rank)) %>%
+              group_by(Locus,site) %>%
+              summarise(missing_reads=sum(nReads), .groups="drop")) %>%
+  mutate(preads_missing=missing_reads/total_reads) %>%
+  filter(site!="Control") %>%
+  mutate(is.2018 = ifelse(site=="WASS 2018","y","n"))
+
+missing_dat$site <- factor(missing_dat$site, levels=c("WASS 2018","WASS 2020", "WACO", "MARP"))
+
+ggplot(missing_dat,aes(x=site,y=preads_missing, fill=is.2018)) +
+  geom_col() +
+  facet_grid(cols=vars(Locus), scales="free") +
+  ylab("Proportion Reads") +
+  ggtitle("Missing Taxonomy") +
+  scale_fill_manual(values=c("grey38","#FF9999")) +
+  theme_bw() + theme(legend.position="none",
+                     axis.text.x=element_text(angle=90, hjust=1,vjust=0.5))
+```
+<br>
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4,fig.width=8}
+nontarget_taxa <- c("Actinobacteria","Bacteroidetes","Planctomycetes","Proteobacteria","Discosea")
+nontarget_dat <- all_dat2 %>%
+  group_by(Locus,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop") %>%
+  left_join(filter(all_dat2, phylum %in% nontarget_taxa) %>%
+              group_by(Locus,site) %>%
+              summarise(nontarget_reads=sum(nReads), .groups="drop")) %>%
+  mutate(preads=nontarget_reads/total_reads) %>%
+  mutate(is.2018 = ifelse(site=="WASS 2018","y","n"))
+
+nontarget_dat$site <- factor(nontarget_dat$site, levels=c("WASS 2018","WASS 2020", "WACO", "MARP"))
+
+
+ggplot(nontarget_dat,aes(x=site,y=preads, fill=is.2018)) +
+  geom_col() +
+  facet_grid(cols=vars(Locus), scales="free") +
+  ylab("Proportion Reads") + xlab("") +
+  ggtitle("Non-Target DNA") +
+  scale_fill_manual(values=c("grey38","#FF9999")) +
+  theme_bw() + theme(legend.position="none",
+                     axis.text.x=element_text(angle=90, hjust=1,vjust=0.5))
+```
+<br>
+
+```{r echo=FALSE, message=FALSE, fig.width=6,fig.height=5}
+egc_rpsite <- filter(all_dat3, site %in% c("WACO","WASS 2018","WASS 2020")) %>%
+  group_by(Locus,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop")
+
+egc_pred <- filter(all_dat3, site %in% c("WACO","WASS 2018","WASS 2020")) %>%
+  mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | 
+                           genus == "Carcinus",1,0)) %>%
+  group_by(Locus,site,Predator) %>%
+  summarise(reads=sum(nReads), .groups="drop") %>%
+  left_join(egc_rpsite) %>%
+  mutate(pReads=reads/total_reads)
+egc_pred$site <- factor(egc_pred$site, levels=c("WASS 2018","WASS 2020", "WACO"))
+
+
+ggplot(egc_pred, aes(x=site,y=pReads,fill=as.factor(Predator))) +
+  geom_col() +
+  facet_grid(rows=vars(Locus), scales="free") +
+  scale_fill_manual(values=c("darkblue","#D55E00","grey58"), name="Predator") +
+  ggtitle("Green Crab (Predator) DNA") + xlab("") +
+  theme_bw()
+```
+
+
+## Specificity
+
+Can we resolve a similar proportion of ASVs down to lower taxonomic levels in the WASS 2018 samples? **Yes - in proportion ASVs of primary prey taxa. But difference goes away when looking at reads instead of ASVs**
+
+```{r echo=FALSE, message=FALSE, fig.height=5, fig.width=10}
+egc_dat2 <- filter(all_dat3, site %in% c("WACO","WASS 2018","WASS 2020")) %>%
+  mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | 
+                           genus == "Carcinus",1,0)) %>%
+  filter(Predator==0 | is.na(Predator))
+
+egc_specificity <- egc_dat2 %>%
+  group_by(Locus, site, rank) %>%
+  summarise(n_ASVs=length(unique(taxon)),
+            n_reads=sum(nReads),.groups="drop") %>%
+  left_join(egc_dat2 %>%
+              group_by(Locus, site) %>%
+              summarise(site_ASVs=length(unique(taxon)),
+                        site_reads=sum(nReads),.groups="drop"), by=c("Locus","site")) %>%
+  mutate(prop_site_ASVs=n_ASVs/site_ASVs,
+         prop_site_reads=n_reads/site_reads)
+
+egc_specificity$rank <- factor(egc_specificity$rank, levels=c("class","order","family","genus","species"))
+egc_specificity$site <- factor(egc_specificity$site, levels=c("WASS 2018","WASS 2020","WACO"))
+
+p1 <- ggplot(egc_specificity, aes(x=site, y=prop_site_ASVs,fill=rank)) +
+  geom_col() +
+  facet_grid(cols=vars(Locus), scales="free") +
+  labs(x="",y="Proportion ASVs", title="Taxonomic Rank of ASVs") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5), legend.position="none")
+p2 <- ggplot(egc_specificity, aes(x=site, y=prop_site_reads,fill=rank)) +
+  geom_col() +
+  facet_grid(cols=vars(Locus), scales="free") +
+  labs(x="",y="Proportion Reads", title="") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+
+plot_grid(p1,p2, rel_widths=c(0.8,1))
+```
+<br>
+
+```{r echo=FALSE, message=FALSE, fig.height=5, fig.width=10}
+egc_specificity2 <- egc_dat2 %>%
+  filter(phylum %in% c("Arthropoda","Mollusca","Annelida")) %>%
+  group_by(Locus, site, rank) %>%
+  summarise(n_ASVs=length(unique(taxon)),
+            n_reads=sum(nReads),.groups="drop") %>%
+  left_join(egc_dat2 %>%
+              group_by(Locus, site) %>%
+              summarise(site_ASVs=length(unique(taxon)),
+                        site_reads=sum(nReads),.groups="drop"), by=c("Locus","site")) %>%
+  mutate(prop_site_ASVs=n_ASVs/site_ASVs,
+         prop_site_reads=n_reads/site_reads)
+
+egc_specificity2$rank <- factor(egc_specificity2$rank, levels=c("class","order","family","genus","species"))
+egc_specificity2$site <- factor(egc_specificity2$site, levels=c("WASS 2018","WASS 2020","WACO"))
+
+p1 <- ggplot(egc_specificity2, aes(x=site, y=prop_site_ASVs,fill=rank)) +
+  geom_col() +
+  facet_grid(cols=vars(Locus), scales="free") +
+  labs(x="",y="Proportion ASVs", title="Taxonomic Rank of Arthropod/Mollusc/Annelids") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5), legend.position="none")
+p2 <- ggplot(egc_specificity2, aes(x=site, y=prop_site_reads,fill=rank)) +
+  geom_col() +
+  facet_grid(cols=vars(Locus), scales="free") +
+  labs(x="",y="Proportion Reads", title="") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+plot_grid(p1,p2, rel_widths=c(0.8,1))
+```
+<br>
+<br>
+
+## Species of interest
+
+**Are there any particular species that show up in the WASS 2020 samples that don't show up in the WASS 2018 samples?**
+
+```{r echo=FALSE}
+wass_tax_summary <- egc_dat2 %>%
+  filter(site %in% c("WASS 2018","WASS 2020")) %>%
+  filter(rank %in% c("family","genus","species")) %>%
+  group_by(phylum, taxon, rank) %>%
+  summarise(sites=paste0(sort(unique(site)), collapse="-"), .groups="drop")
+
+print(wass_tax_summary %>% filter(sites=="WASS 2020"))
+```
+<br>
+
+So primarily a bee, *Euglossia*, and an ostracod (*Cyprideis*). But WASS 2018 taxonomic output does have a bee genus, and some other insect taxonomic hits.
 
 
 
