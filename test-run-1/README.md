@@ -35,7 +35,14 @@ I broke this question down according to 4 metrics:
 
 **1. How does primer affinity for green crab differ?**
 
-All primers had a relatively strong affinity for green crab in the WASS samples, whereas there was much less green crab DNA from the WACO samples. Overall BF3/BR2 sequenced the greatest proportion of green crab DNA, followed by Leray, then LerayXT. De-noising the data (i.e., removing sequences that showed up in the controls) drastically lowered the proportion of green crab DNA in the data - particularly for Leray/LerayXT.
+All primers had a relatively strong affinity for green crab in the WASS samples, whereas there was much less green crab DNA from the WACO samples. Overall BF3/BR2 sequenced the greatest proportion of green crab DNA, followed by Leray, then LerayXT. 
+
+![img-affinity](https://github.com/mfisher5/EGC-Salish-Sea/blob/master/test-run-1/results/EGC_primer_affinity.png?raw=true)
+
+<br>
+De-noising the data (i.e., removing sequences that showed up in the controls) drastically lowered the proportion of green crab DNA in the data - particularly for Leray/LerayXT.
+
+![img-affinity-denoised](https://github.com/mfisher5/EGC-Salish-Sea/blob/master/test-run-1/results/EGC_primer_affinity_denoised.png?raw=true)
 <br>
 
 **2. Did primers pick up species of interest?**
@@ -59,8 +66,11 @@ Algae, Diatoms, and Rotifers:
 
 For this metric, I focused in on Arthropoda, Annelida, and Mollusca. BF3/BR2 tended to identify the highest proportion of unique sequences down to the species level, particularly in the WACO and WASS 2020 samples. However, BF3/BR2 did not do a great job picking up worm DNA. LerayXT was the second best, followed by Leray. This is not too unexpected -- BF3/BR2 targets a longer sequence, which leaves more room for the data to capture species-specific differences in DNA. 
 
-<br>
 
+![img-specificity](https://github.com/mfisher5/EGC-Salish-Sea/blob/master/test-run-1/results/EGC_primer_specificity.png?raw=true)
+
+<br>
+<br>
 
 
 
@@ -81,6 +91,8 @@ Leray common prey taxa: *Hemigrapsus oregonensis*, *Metacarcinus magister*, *Amp
 Yes! They tended to have more non-target bacterial / amoeba DNA, but had an equivalent proportion of sequences able to be assigned taxonomic information. They also didn't have quite as much green crab DNA (proportionally) as the WASS 2020 samples. And the proportion of DNA sequences that were able to be resolved down to the species level was equivalent to, or higher than, the WASS 2020 samples.
 
 The read depth (number of DNA sequences per sample) were a little lower for these samples than the others, across all primers. I will compare protocols with Zach, who worked with museum specimens in ethanol. 
+
+![img-read-depth](https://github.com/mfisher5/EGC-Salish-Sea/blob/master/data/raw/qc/run-1-EGC-read-depth-by-primer.png?raw=true)
 <br>
 <br>
 
