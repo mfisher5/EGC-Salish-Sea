@@ -1,0 +1,727 @@
+---
+title: 'Compare De-noised Data from COI Primers'
+author: "Mary Fisher"
+date: "2/9/2022"
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+# Description
+
+The first sequencing lane was designed to answer three questions: 
+
+1. Which primer(s) do we want to use for the remainder of the (1) Salish Sea Green crab, (2) Willapa Bay Green crab, and (3) Dungeness crab instars? Factors to consider: amplification of predator DNA, presence of expected prey / prey of particular interest
+
+2. Are we getting usable data from the 2018 Salish Sea Green crab samples, which are subsamples of the 95% etOH in which dissected stomachs were stored?
+
+3. Are there any major signals of contamination from the SEFS lab (not particularly relevant anymore)
+
+
+
+# Set up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<br>
+
+This script requires the following packages:
+```{r message=FALSE, warning=FALSE}
+library(here)
+library(tidyverse)
+library(magrittr)
+library(cowplot)
+```
+<br>
+
+User directories
+```{r}
+indir_blast  <- 'test-run-1/data/blast'
+indir_asv    <- 'test-run-1/data/dada2_denoised'
+indir_meta   <- 'test-run-1/data/dada2_denoised'
+outdir       <- 'test-run-1/results'
+```
+<br>
+
+What are the suffixes of the processed blast file with taxonomy from script 6?
+```{r}
+# hashes with unique staxids
+suffix1 <- 'blast_uniqueIDs_taxonomy.csv'
+
+# hashes with multiple IDs, that required the LCA function
+suffix2 <- 'blast_multipleIDs_taxonomy.csv'
+```
+<br>
+<br>
+
+
+# Question 1: Primer Comparison
+
+**Which primer(s) do we want to use for the remainder of the (1) Salish Sea Green crab, (2) Willapa Bay Green crab, and (3) Dungeness crab instars? **
+
+## Data
+
+To answer this question, we need both the ASV table and the Blast taxonomy. 
+```{r message=FALSE}
+asv.b   <- readRDS(here(indir_asv,'BF3.Cleaning.before.Occ.model.rds'))
+asv.b %<>% unnest(cols=c(Step2.tibble)) %>% dplyr::select(SampleID, Hash, nReads)
+asv.l   <- readRDS(here(indir_asv,'Leray.Cleaning.before.Occ.model.rds'))
+asv.l %<>% unnest(cols=c(Step2.tibble)) %>% dplyr::select(SampleID, Hash, nReads)
+asv.lxt <- readRDS(here(indir_asv,'LerayXT.Cleaning.before.Occ.model.rds'))
+asv.lxt %<>% unnest(cols=c(Step2.tibble)) %>% dplyr::select(SampleID, Hash, nReads)
+```
+<br>
+
+Note that the processed blast taxonomy files have results from forward-only, reverse-only, and merged reads. for this comparison, let's focus only on merged reads.
+```{r message=FALSE}
+tax_key.b <- read_csv(here(indir_blast, paste0("lane1_bf3_",suffix2))) %>%
+  rename("Hash"=representative)
+tax_key.b %<>%  bind_rows(read_csv(here(indir_blast, paste0("lane1_bf3_",suffix1))) %>%
+              rename("Hash"=qseqid) %>%
+                mutate(taxID="unique", score="unique") %>%
+              dplyr::select(all_of(colnames(tax_key.b)))) %>%
+  filter(dataset=="merged")
+
+tax_key.l <- read_csv(here(indir_blast, paste0("lane1_leray_",suffix2))) %>%
+  rename("Hash"=representative)
+tax_key.l %<>%  bind_rows(read_csv(here(indir_blast, paste0("lane1_leray_",suffix1))) %>%
+              rename("Hash"=qseqid) %>%
+                mutate(taxID="unique", score="unique") %>%
+              dplyr::select(all_of(colnames(tax_key.l)))) %>%
+  filter(dataset=="merged")
+
+tax_key.lxt <- read_csv(here(indir_blast, paste0("lane1_lerayxt_",suffix2))) %>%
+  rename("Hash"=representative)
+tax_key.lxt %<>%  bind_rows(read_csv(here(indir_blast, paste0("lane1_lerayxt_",suffix1))) %>%
+              rename("Hash"=qseqid) %>%
+                mutate(taxID="unique", score="unique") %>%
+              dplyr::select(all_of(colnames(tax_key.lxt)))) %>%
+  filter(dataset=="merged")
+```
+<br>
+
+Connect the taxonomy to the hashes in the ASV tables.
+```{r}
+bdat   <- left_join(asv.b, tax_key.b,by="Hash")
+ldat   <- left_join(asv.l, tax_key.l,by="Hash")
+lxtdat <- left_join(asv.lxt, tax_key.lxt,by="Hash")
+```
+<br>
+
+To differentiate between crab species and sampling groups, read in the sequencing metadata and connect to the `Sample_name` (actually just an ID number) in the ASV table.
+```{r message=FALSE}
+bdat <- left_join(bdat,read.csv(here("test-run-1","data","dada2_denoised","BF3_dada2_metadata.csv")),by="SampleID") %>%
+  mutate(Locus="BF3")
+ldat <- left_join(ldat,read.csv(here("test-run-1","data","dada2_denoised","Leray_dada2_metadata.csv")),by="SampleID") %>%
+  mutate(Locus="Leray")
+lxtdat <- left_join(lxtdat,read.csv(here("test-run-1","data","dada2_denoised","LerayXT_dada2_metadata.csv")),by="SampleID") %>%
+  mutate(Locus="LerayXT")
+```
+<br>
+
+Finally, create one giant data frame. We can do this because there is a column `Marker` that specifies the primer.
+```{r}
+all_dat <- bind_rows(bdat,ldat,lxtdat)
+```
+<br>
+<br>
+
+## Missing Taxonomy
+
+Which primers had the most reads that couldn't be assigned taxonomy? **BF3**
+```{r echo=FALSE, message=FALSE, fig.height=3,fig.width=8}
+missing_dat <- all_dat %>%
+  group_by(Locus,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop") %>%
+  left_join(filter(all_dat, is.na(rank)) %>%
+              group_by(Locus,site) %>%
+              summarise(missing_reads=sum(nReads), .groups="drop")) %>%
+  mutate(preads_missing=missing_reads/total_reads)
+
+ggplot(missing_dat,aes(x=Locus,y=preads_missing)) +
+  geom_col() +
+  facet_grid(cols=vars(site)) +
+  ylab("Proportion Reads\n Missing Taxonomy") +
+  theme_bw()
+```
+<br>
+In contrast to the "noisy" data, LerayXT is missing taxonomy for a higher proportion of reads for the MARPT samples. BF3 is missing taxonomy for a higher proportion of reads in the WASS 2018/2020 denoised data than in the noisy data.
+
+
+```{r}
+all_dat2 <- filter(all_dat, !is.na(rank))
+```
+<br>
+<br>
+
+## Non-Target DNA
+
+Which primers amplified the most bacterial / amoeba DNA? **BF3**
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3,fig.width=8}
+nontarget_taxa <- c("Actinobacteria","Bacteroidetes","Planctomycetes","Proteobacteria","Discosea")
+nontarget_dat <- all_dat2 %>%
+  group_by(Locus,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop") %>%
+  left_join(filter(all_dat2, phylum %in% nontarget_taxa) %>%
+              group_by(Locus,site) %>%
+              summarise(nontarget_reads=sum(nReads), .groups="drop")) %>%
+  mutate(preads=nontarget_reads/total_reads)
+
+ggplot(nontarget_dat,aes(x=Locus,y=preads)) +
+  geom_col() +
+  facet_grid(cols=vars(site)) +
+  ylab("Proportion Reads\n Non-Target DNA") +
+  theme_bw()
+```
+<br>
+
+After denoising the data, there is a lot less bacterial DNA in the MARPT and WACO samples, because controls were subtracted from the samples. However, BF3 had a higher proportion of reads with non-target DNA in the denoised data than the noisy data for WASS 2018/2020.
+
+```{r}
+all_dat3 <- all_dat2 %>% filter(!(phylum %in% c(nontarget_taxa))) %>%
+  filter(class!="Mammalia")
+```
+<br>
+
+## Predator DNA
+
+### EGC
+
+Get only the Green Crab samples, and ignore hashes with missing taxonomic information.
+```{r echo=FALSE}
+egc_dat <- filter(all_dat3, site %in% c("WACO","WASS 2018","WASS 2020"))
+unique(egc_dat$crab)
+
+egc_rps <- egc_dat %>%
+  group_by(Sample.number,Locus,SampleID,crab,tech,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop")
+
+egc_rpsite <- egc_dat %>%
+  group_by(Locus,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop")
+```
+<br>
+
+
+Which primer amplified the least Green Crab DNA? **LerayXT**
+
+The most Green Crab DNA? **BF3** for WASS 2020 and WASS 2018, and **Leray** otherwise.
+
+```{r echo=FALSE, message=FALSE, fig.width=6,fig.height=5}
+egc_pred <- egc_dat %>%
+  mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | 
+                           genus == "Carcinus",1,0)) %>%
+  group_by(Locus,site,Predator) %>%
+  summarise(reads=sum(nReads), .groups="drop") %>%
+  left_join(egc_rpsite) %>%
+  mutate(pReads=reads/total_reads)
+
+ggplot(egc_pred, aes(x=site,y=pReads,fill=as.factor(Predator))) +
+  geom_col() +
+  facet_grid(rows=vars(Locus), scales="free") +
+  scale_fill_manual(values=c("darkblue","maroon","grey58"), name="Predator") +
+  ggtitle("By Site") +
+  theme_bw()
+```
+<br>
+
+```{r echo=FALSE, message=FALSE}
+egc_pred <- egc_dat %>%
+  mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | genus == "Carcinus",1,0)) %>%
+  group_by(Sample.number,Locus,SampleID,crab,tech,site,Predator) %>%
+  summarise(reads=sum(nReads), .groups="drop") %>%
+  left_join(egc_rps) %>%
+  mutate(pReads=reads/total_reads)
+
+ggplot(data=filter(egc_pred, Predator==1), aes(x=SampleID,y=pReads,fill=as.factor(Predator))) +
+  geom_col() +
+  facet_grid(cols=vars(site),rows=vars(Locus), scales="free") +
+  scale_fill_manual(values=c("maroon","grey58"), name="Predator") +
+  ggtitle("By Sample") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+Subtracting out the controls reduced the amount of predator DNA left in the WACO samples (but also reduced the number of technical replicates with data); Just the BF3 WASS 2020 samples show about the same proprtion of predator DNA in the denoised data as in the noisy data.
+
+```{r}
+egc_dat2 <- filter(all_dat3, site %in% c("WACO","WASS 2018","WASS 2020")) %>%
+  mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | 
+                           genus == "Carcinus",1,0)) %>%
+  filter(Predator==0 | is.na(Predator))
+```
+<br>
+<br>
+
+### Dungies
+
+Get only the Dungy samples, and ignore hashes with missing taxonomic information.
+```{r echo=FALSE}
+dungy_dat <- filter(all_dat3, site %in% c("MARP"))
+unique(dungy_dat$crab)
+
+dungy_rps <- dungy_dat %>%
+  group_by(Sample.number,Locus,SampleID,crab,tech) %>%
+  summarise(total_reads=sum(nReads), .groups="drop")
+```
+<br>
+
+Which primer amplified the least green crab DNA in the Dungy samples? **LerayXT**
+```{r echo=FALSE, message=FALSE, fig.height=4}
+dungy_pred <- dungy_dat %>%
+  mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | genus == "Carcinus",1,0)) %>%
+  group_by(Sample.number,Locus,SampleID,crab,tech,Predator) %>%
+  summarise(reads=sum(nReads), .groups="drop") %>%
+  left_join(dungy_rps) %>%
+  mutate(pReads=reads/total_reads)
+
+ggplot(data=dungy_pred, aes(x=SampleID,y=pReads,fill=as.factor(Predator))) +
+  geom_col() +
+  facet_grid(cols=vars(Locus), scales="free") +
+  scale_fill_manual(values=c("darkblue","maroon","grey58"), name="Green Crab") +
+  ggtitle("By Sample") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+```{r}
+dungy_dat2 <- dungy_dat %>%
+  mutate(EGC=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | 
+                           genus == "Carcinus",1,0)) %>%
+  filter(EGC==0  | is.na(EGC))
+```
+<br>
+<br>
+
+
+## Prey Composition: diversity
+
+### EGC
+
+**How did diversity of phyla / taxa (family/genus/species) differ between primers?**
+```{r echo=FALSE, fig.height=4,fig.width=5}
+egc_phy_div <- egc_dat2 %>% 
+  group_by(Locus, site) %>%
+  summarise(n_phyla=length(unique(phylum)), .groups="drop")
+
+ggplot(egc_phy_div, aes(x=site,y=n_phyla,fill=Locus)) +
+  geom_col(position="dodge") +
+  scale_fill_manual(values=c("forestgreen","dodgerblue4","deepskyblue2")) +
+  labs(y="Count", x="Group", title="Phyla") +
+  theme_bw()
+```
+<br>
+
+Unique phyla: `r paste0(unique(egc_dat2$phylum),collapse=", ")`
+<br>
+
+```{r echo=FALSE, fig.height=4,fig.width=5}
+egc_tax_div <- egc_dat2 %>% 
+  filter(rank %in% c("family","genus","species")) %>%
+  group_by(Locus, site) %>%
+  summarise(n_tax=length(unique(taxon)), .groups="drop")
+
+ggplot(egc_tax_div, aes(x=site,y=n_tax,fill=Locus)) +
+  geom_col(position="dodge") +
+  scale_fill_manual(values=c("forestgreen","dodgerblue4","deepskyblue2")) +
+  labs(y="Count", x="Group", title="Taxa", subtitle="*excluding sequences not identified down to family") +
+  theme_bw()
+```
+<br>
+
+
+
+
+### Dungies
+**How did diversity of phyla / taxa (family/genus/species) differ between primers?**
+```{r echo=FALSE, fig.height=4,fig.width=5}
+dungy_phy_div <- dungy_dat2 %>% 
+  group_by(Locus, site) %>%
+  summarise(n_phyla=length(unique(phylum)), .groups="drop")
+
+ggplot(dungy_phy_div, aes(x=site,y=n_phyla,fill=Locus)) +
+  geom_col(position="dodge") +
+  scale_fill_manual(values=c("forestgreen","dodgerblue4","deepskyblue2")) +
+  labs(y="Count", x="Group", title="Phyla") +
+  theme_bw()
+```
+<br>
+
+Unique phyla: `r paste0(unique(dungy_dat2$phylum),collapse=", ")`
+<br>
+
+```{r echo=FALSE, fig.height=4,fig.width=5}
+dungy_tax_div <- dungy_dat2 %>% 
+  filter(!is.na(family) | !is.na(species)) %>%
+  group_by(Locus, site) %>%
+  summarise(n_tax=length(unique(taxon)), .groups="drop")
+
+ggplot(dungy_tax_div, aes(x=site,y=n_tax,fill=Locus)) +
+  geom_col(position="dodge") +
+  scale_fill_manual(values=c("forestgreen","deepskyblue2")) +
+  labs(y="Count", x="Group", title="Taxa", subtitle="*excluding sequences not identified down to family") +
+  theme_bw()
+```
+<br>
+```{r echo=FALSE, eval=FALSE}
+dungy_dat2 %>% 
+  filter(!is.na(family) | !is.na(species)) %>%
+  dplyr::select(Locus,taxon, rank, nReads,phylum, class, order, family)
+```
+<br>
+<br>
+
+## Prey Composition: specificity
+
+### EGC: Overview
+
+**Which primer was able to detect the most ASVs down to the species level?**
+```{r echo=FALSE, fig.height=4}
+egc_specificity <- egc_dat2 %>%
+  group_by(Locus, site, rank) %>%
+  summarise(n_ASVs=length(unique(taxon)),.groups="drop") %>%
+  left_join(egc_dat2 %>%
+              group_by(Locus, site) %>%
+              summarise(site_ASVs=length(unique(taxon)),.groups="drop"), by=c("Locus","site")) %>%
+  mutate(prop_site_ASVs=n_ASVs/site_ASVs)
+
+egc_specificity$rank <- factor(egc_specificity$rank, levels=c("class","order","family","genus","species"))
+
+ggplot(egc_specificity, aes(x=Locus, y=prop_site_ASVs,fill=rank)) +
+  geom_col() +
+  facet_grid(cols=vars(site), scales="free") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+
+**For Arthropods, Molluscs, and Worms, which primer was able to detect the most ASVs down to the species level?** it varies by group and phylum. BF3 did best with molluscs and arthropods, but it didn't pick up annelids and did worse than LerayXT in the WASS 2018 samples.
+
+```{r echo=FALSE, message=FALSE}
+egc_specificity <- egc_dat2 %>%
+  group_by(Locus, site, phylum, rank) %>%
+  summarise(n_ASVs=length(unique(taxon))) %>%
+  left_join(egc_dat2 %>%
+              group_by(Locus, site, phylum) %>%
+              summarise(site_ASVs=length(unique(taxon))), by=c("Locus","site","phylum")) %>%
+  mutate(prop_site_ASVs=n_ASVs/site_ASVs) %>%
+  filter(phylum %in% c("Arthropoda","Mollusca","Annelida"))
+egc_specificity$rank <- factor(egc_specificity$rank, levels=c("class","order","family","genus","species"))
+ggplot(egc_specificity, aes(x=Locus, y=prop_site_ASVs,fill=rank)) +
+  geom_col() +
+  facet_grid(cols=vars(site), rows=vars(phylum), scales="free") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+```
+<br>
+
+
+**What taxa (family/genus/species) were captured by only 1-2 primers?**
+```{r echo=FALSE, fig.height=4,fig.width=7}
+egc_tax_summary <- egc_dat2 %>%
+  filter(rank %in% c("family","genus","species")) %>%
+  group_by(phylum, taxon, rank) %>%
+  summarise(loci=paste0(sort(unique(Locus)), collapse="-"), .groups="drop") %>%
+  group_by(phylum, loci) %>%
+  summarise(n_taxa=length(unique(taxon)), .groups="drop") %>%
+  filter(loci!="BF3-Leray-LerayXT")
+
+egc_tax_summary$loci <- factor(egc_tax_summary$loci, levels=c("BF3","Leray","LerayXT",
+                                                              "BF3-Leray","BF3-LerayXT",
+                                                              "Leray-LerayXT"))
+
+ggplot(egc_tax_summary, aes(x=loci, y=n_taxa, fill=phylum)) +
+  geom_col() +
+  labs(x="", y="Number of Taxa") +
+  theme_bw()
+```
+<br>
+
+```{r echo=FALSE, fig.height=3,fig.width=7}
+egc_tax_summary <- egc_dat2 %>%
+  filter(rank %in% c("family","genus","species")) %>%
+  filter(is.na(phylum) | phylum=="Arthropoda") %>%
+  group_by(class, taxon, rank) %>%
+  summarise(loci=paste0(sort(unique(Locus)), collapse="-"), .groups="drop") %>%
+  group_by(class, loci) %>%
+  summarise(n_taxa=length(unique(taxon)), .groups="drop") %>%
+  filter(loci!="BF3-Leray-LerayXT")
+
+egc_tax_summary$loci <- factor(egc_tax_summary$loci, levels=c("BF3","Leray","LerayXT",
+                                                              "BF3-Leray","BF3-LerayXT",
+                                                              "Leray-LerayXT"))
+
+ggplot(egc_tax_summary, aes(x=loci, y=n_taxa, fill=class)) +
+  geom_col() +
+  labs(x="", y="Number of Taxa", title="Arthropods & Unknown Phyla") +
+  theme_bw()
+```
+<br>
+<br>
+BF3 is picking up ostracods and a type of microscopic algae; Leray/LerayXT are picking up insects, barnacles (Leray down to species, LerayXT just *Balanus*); Leray is picking up some non-specific *malacostraca*...
+*Note - Dinophyceae >> Syndiniales >> Hematodinium are dinoflagellates that are internal parasites of crustaceans.*
+
+<br>
+```{r eval=FALSE, echo=FALSE}
+egc_tax_summary <- egc_dat2 %>%
+  filter(rank %in% c("family","genus","species")) %>%
+  group_by(taxon, rank) %>%
+  summarise(loci=paste0(sort(unique(Locus)), collapse="-"), .groups="drop") %>%
+  filter(loci != "BF3-Leray-LerayXT") %>%
+  left_join(dplyr::select(egc_dat2, rank,kingdom,phylum,class,order,family,genus,species,taxon) %>% distinct(), by=c("rank","taxon")) %>%
+  arrange(loci, rank)
+
+egc_tax_summary
+```
+<br>
+
+
+### Dungy: Overview
+
+**Which primer was able to detect the most ASVs down to the species level?**
+```{r echo=FALSE, message=FALSE, fig.height=4}
+dungy_specificity <- dungy_dat2 %>%
+  group_by(Locus, site, phylum, rank) %>%
+  summarise(n_ASVs=length(unique(taxon))) %>%
+  left_join(dungy_dat2 %>%
+              group_by(Locus, site, phylum) %>%
+              summarise(site_ASVs=length(unique(taxon))), by=c("Locus","site","phylum")) %>%
+  mutate(prop_site_ASVs=n_ASVs/site_ASVs)
+dungy_specificity$rank <- factor(dungy_specificity$rank, levels=c("class","order","family","genus","species"))
+ggplot(dungy_specificity, aes(x=phylum, y=prop_site_ASVs,fill=rank)) +
+  geom_col() +
+  facet_grid(rows=vars(Locus), scales="free") +
+  theme_bw() + theme(axis.text.x=element_text(angle=45,hjust=1,vjust=1))
+```
+<br>
+
+
+
+### EGC 
+
+Species of interest: 
+
+**1.** *Cancer (Metacarcinus) magister*
+
+```{r echo=FALSE, message=FALSE}
+egc_cmag <- egc_dat2 %>%
+  filter(taxon=="Metacarcinus magister") %>%
+  group_by(SampleID,site,Locus) %>%
+  summarise(dungy_reads=sum(nReads)) %>%
+  left_join(egc_dat2 %>% group_by(SampleID,site,Locus) %>%
+              summarise(sample_reads=sum(nReads)), by=c("SampleID","site","Locus")) %>%
+  mutate(pReads=dungy_reads/sample_reads) %>%
+  arrange(SampleID, pReads) %>% dplyr::select(SampleID,Locus,pReads)
+egc_cmag
+```
+<br>
+
+
+**2.** *Bivalvia*-- most important is *Ruditapes philippinarium* (Manila clam)
+```{r echo=FALSE, message=FALSE}
+egc_bivalve <- egc_dat2 %>%
+  filter(taxon=="Ruditapes philippinarium" | genus=="Ruditapes" | class=="Bivalvia") %>%
+  group_by(SampleID,site,Locus,taxon,rank) %>%
+  summarise(dungy_reads=sum(nReads)) %>%
+  left_join(egc_dat2 %>% group_by(SampleID,site,Locus) %>%
+              summarise(sample_reads=sum(nReads)), by=c("SampleID","site","Locus")) %>%
+  mutate(pReads=dungy_reads/sample_reads) %>%
+  arrange(SampleID, pReads) %>% dplyr::select(SampleID,Locus,taxon,rank,pReads)
+egc_bivalve
+```
+<br>
+<br>
+
+
+<br>
+<br>
+
+# Question 2: WASS 2018 Vial Samples
+
+**Are we getting usable data from the 2018 Salish Sea Green crab samples, which are subsamples of the 95% etOH in which dissected stomachs were stored?**
+
+<br>
+
+## Missing Taxonomy & Non-Target DNA
+
+Do the 2018 samples have a higher proportion of any of the following, compared to the 2020/2021 samples?
+
+1. missing taxonomy (**not consistently**), 
+2. non-target bacterial or amoeba DNA (**YES for BF3**) 
+3. predator DNA (**less than WASS 2020**)
+
+<br>
+
+```{r echo=FALSE, message=FALSE, fig.height=3,fig.width=8}
+missing_dat <- all_dat %>%
+  group_by(Locus,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop") %>%
+  left_join(filter(all_dat, is.na(rank)) %>%
+              group_by(Locus,site) %>%
+              summarise(missing_reads=sum(nReads), .groups="drop")) %>%
+  mutate(preads_missing=missing_reads/total_reads) %>%
+  filter(site!="Control") %>%
+  mutate(is.2018 = ifelse(site=="WASS 2018","y","n"))
+
+missing_dat$site <- factor(missing_dat$site, levels=c("WASS 2018","WASS 2020", "WACO", "MARP"))
+
+ggplot(missing_dat,aes(x=site,y=preads_missing, fill=is.2018)) +
+  geom_col() +
+  facet_grid(cols=vars(Locus), scales="free") +
+  ylab("Proportion Reads") +
+  ggtitle("Missing Taxonomy") +
+  scale_fill_manual(values=c("grey38","#FF9999")) +
+  theme_bw() + theme(legend.position="none",
+                     axis.text.x=element_text(angle=90, hjust=1,vjust=0.5))
+```
+<br>
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4,fig.width=8}
+nontarget_taxa <- c("Actinobacteria","Bacteroidetes","Planctomycetes","Proteobacteria","Discosea")
+nontarget_dat <- all_dat2 %>%
+  group_by(Locus,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop") %>%
+  left_join(filter(all_dat2, phylum %in% nontarget_taxa) %>%
+              group_by(Locus,site) %>%
+              summarise(nontarget_reads=sum(nReads), .groups="drop")) %>%
+  mutate(preads=nontarget_reads/total_reads) %>%
+  mutate(is.2018 = ifelse(site=="WASS 2018","y","n"))
+
+nontarget_dat$site <- factor(nontarget_dat$site, levels=c("WASS 2018","WASS 2020", "WACO", "MARP"))
+
+
+ggplot(nontarget_dat,aes(x=site,y=preads, fill=is.2018)) +
+  geom_col() +
+  facet_grid(cols=vars(Locus), scales="free") +
+  ylab("Proportion Reads") + xlab("") +
+  ggtitle("Non-Target DNA") +
+  scale_fill_manual(values=c("grey38","#FF9999")) +
+  theme_bw() + theme(legend.position="none",
+                     axis.text.x=element_text(angle=90, hjust=1,vjust=0.5))
+```
+<br>
+
+```{r echo=FALSE, message=FALSE, fig.width=6,fig.height=5}
+egc_rpsite <- filter(all_dat3, site %in% c("WACO","WASS 2018","WASS 2020")) %>%
+  group_by(Locus,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop")
+
+egc_pred <- filter(all_dat3, site %in% c("WACO","WASS 2018","WASS 2020")) %>%
+  mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | 
+                           genus == "Carcinus",1,0)) %>%
+  group_by(Locus,site,Predator) %>%
+  summarise(reads=sum(nReads), .groups="drop") %>%
+  left_join(egc_rpsite) %>%
+  mutate(pReads=reads/total_reads)
+egc_pred$site <- factor(egc_pred$site, levels=c("WASS 2018","WASS 2020", "WACO"))
+
+
+ggplot(egc_pred, aes(x=site,y=pReads,fill=as.factor(Predator))) +
+  geom_col() +
+  facet_grid(rows=vars(Locus), scales="free") +
+  scale_fill_manual(values=c("darkblue","#D55E00","grey58"), name="Predator") +
+  ggtitle("Green Crab (Predator) DNA") + xlab("") +
+  theme_bw()
+```
+
+
+## Specificity
+
+Can we resolve a similar proportion of ASVs down to lower taxonomic levels in the WASS 2018 samples? **Yes - although fewer ASVs for arthropods / annelids / molluscs**
+
+```{r echo=FALSE, message=FALSE, fig.height=5, fig.width=10}
+egc_dat2 <- filter(all_dat3, site %in% c("WACO","WASS 2018","WASS 2020")) %>%
+  mutate(Predator=ifelse(taxon == "Carcinus maenas" | taxon == "Carcinus aestuarii" | 
+                           genus == "Carcinus",1,0)) %>%
+  filter(Predator==0 | is.na(Predator))
+
+egc_specificity <- egc_dat2 %>%
+  group_by(Locus, site, rank) %>%
+  summarise(n_ASVs=length(unique(taxon)),
+            n_reads=sum(nReads),.groups="drop") %>%
+  left_join(egc_dat2 %>%
+              group_by(Locus, site) %>%
+              summarise(site_ASVs=length(unique(taxon)),
+                        site_reads=sum(nReads),.groups="drop"), by=c("Locus","site")) %>%
+  mutate(prop_site_ASVs=n_ASVs/site_ASVs,
+         prop_site_reads=n_reads/site_reads)
+
+egc_specificity$rank <- factor(egc_specificity$rank, levels=c("class","order","family","genus","species"))
+egc_specificity$site <- factor(egc_specificity$site, levels=c("WASS 2018","WASS 2020","WACO"))
+
+p1 <- ggplot(egc_specificity, aes(x=site, y=prop_site_ASVs,fill=rank)) +
+  geom_col() +
+  facet_grid(cols=vars(Locus), scales="free") +
+  labs(x="",y="Proportion ASVs", title="Taxonomic Rank of ASVs") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5), legend.position="none")
+p2 <- ggplot(egc_specificity, aes(x=site, y=prop_site_reads,fill=rank)) +
+  geom_col() +
+  facet_grid(cols=vars(Locus), scales="free") +
+  labs(x="",y="Proportion Reads", title="") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+
+plot_grid(p1,p2, rel_widths=c(0.8,1))
+```
+<br>
+
+```{r echo=FALSE, message=FALSE, fig.height=5, fig.width=10}
+egc_specificity2 <- egc_dat2 %>%
+  filter(phylum %in% c("Arthropoda","Mollusca","Annelida")) %>%
+  group_by(Locus, site, rank) %>%
+  summarise(n_ASVs=length(unique(taxon)),
+            n_reads=sum(nReads),.groups="drop") %>%
+  left_join(egc_dat2 %>%
+              group_by(Locus, site) %>%
+              summarise(site_ASVs=length(unique(taxon)),
+                        site_reads=sum(nReads),.groups="drop"), by=c("Locus","site")) %>%
+  mutate(prop_site_ASVs=n_ASVs/site_ASVs,
+         prop_site_reads=n_reads/site_reads)
+
+egc_specificity2$rank <- factor(egc_specificity2$rank, levels=c("class","order","family","genus","species"))
+egc_specificity2$site <- factor(egc_specificity2$site, levels=c("WASS 2018","WASS 2020","WACO"))
+
+p1 <- ggplot(egc_specificity2, aes(x=site, y=prop_site_ASVs,fill=rank)) +
+  geom_col() +
+  facet_grid(cols=vars(Locus), scales="free") +
+  labs(x="",y="Proportion ASVs", title="Taxonomic Rank of Arthropod/Mollusc/Annelids") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5), legend.position="none")
+p2 <- ggplot(egc_specificity2, aes(x=site, y=prop_site_reads,fill=rank)) +
+  geom_col() +
+  facet_grid(cols=vars(Locus), scales="free") +
+  labs(x="",y="Proportion Reads", title="") +
+  theme_bw() + theme(axis.text.x=element_text(angle=90,hjust=1,vjust=0.5))
+plot_grid(p1,p2, rel_widths=c(0.8,1))
+```
+<br>
+<br>
+
+## Species of interest
+
+**Are there any particular species that show up in the WASS 2020 samples that don't show up in the WASS 2018 samples?**
+
+```{r echo=FALSE}
+wass_tax_summary <- egc_dat2 %>%
+  filter(site %in% c("WASS 2018","WASS 2020")) %>%
+  filter(rank %in% c("family","genus","species")) %>%
+  group_by(phylum, taxon, rank) %>%
+  summarise(sites=paste0(sort(unique(site)), collapse="-"), .groups="drop")
+
+print(wass_tax_summary %>% filter(sites=="WASS 2020"))
+```
+<br>
+
+So primarily a bee, *Euglossia*, and an ostracod (*Cyprideis*). But WASS 2018 taxonomic output does have a bee genus, and some other insect taxonomic hits.
+
+
+
+
+
+
+
+
+
+
+
+
+
