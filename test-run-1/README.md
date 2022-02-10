@@ -10,6 +10,10 @@ I'm going to try to make this work anyway, to see if I can still answer the foll
 4. What are some of the common diet items in these samples? Do these diet items align with what the WSG Crab Team expected to see? If not, are these true signals or potential contamination?
 <br>
 
+***The contents of this document and folder are preliminary analyses only, and should not be used to identify green crab diet items***
+
+<br>
+
 
 ### Workflow
 
