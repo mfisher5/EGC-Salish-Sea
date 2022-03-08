@@ -62,7 +62,7 @@ Dungeness crab: The WACO samples had a pretty high proportion of DNA identified 
 
 Bacterial DNA and amoeba DNA: While there was relatively low proportions of non-target DNA overall, BF3/BR2 tended to pick up the most by a mile. 
 
-Algae, Diatoms, and Rotifers: 
+Algae, Diatoms, and Rotifers: Leray/LerayXT did pick up more DNA from algae, diatoms, rotifers, and fungi([plot here](https://github.com/mfisher5/EGC-Salish-Sea/blob/master/test-run-1/results/AllSamples_NonTarget_AlgaeRotifer.png?raw=true)); however, the proportion of reads that these taxa made up in the data were even lower than the proportion of bacterial / amoeba reads. Which means that combined, BF3/BR2 still picks up the most non-target DNA.
 
 <br>
 
@@ -111,7 +111,7 @@ There is some terrestrial insect DNA. I think it's worth waiting for future runs
 
 ### Next Steps, 2-25-2022
 
-1. Which primer picked up a higher proportion of diatom, rotifer, and algae DNA?
+1. Which primer picked up a higher proportion of diatom, rotifer, and algae DNA? **DONE**
 
 2. Sample and extract *Z. marina* DNA from the herbarium archives, and do a test PCR with the Leray and BF3/BR2 primers.
 
