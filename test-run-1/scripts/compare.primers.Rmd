@@ -38,10 +38,10 @@ library(cowplot)
 
 User directories
 ```{r}
-indir_blast  <- 'test-lane-1/data/blast'
-indir_asv    <- 'test-lane-1/data/dada2'
-indir_meta   <- 'test-lane-1/data/cutadapt'
-outdir       <- 'test-lane-1/results'
+indir_blast  <- 'test-run-1/data/blast'
+indir_asv    <- 'test-run-1/data/dada2'
+indir_meta   <- 'test-run-1/data/cutadapt'
+outdir       <- 'test-run-1/results'
 ```
 <br>
 
@@ -253,7 +253,7 @@ all_dat2 <- filter(all_dat, !is.na(rank))
 
 Which primers amplified the most bacterial / amoeba DNA? **BF3**
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3,fig.width=8}
-nontarget_taxa <- c("Actinobacteria","Bacteroidetes","Planctomycetes","Proteobacteria","Discosea")
+nontarget_taxa <- c("Actinobacteria","Bacteroidetes","Planctomycetes","Proteobacteria","Discosea", "Tubulinea")
 nontarget_dat <- all_dat2 %>%
   group_by(Locus,site) %>%
   summarise(total_reads=sum(nReads), .groups="drop") %>%
@@ -269,6 +269,50 @@ ggplot(nontarget_dat,aes(x=Locus,y=preads)) +
   theme_bw()
 ```
 <br>
+
+What if we consider DNA from rotifers, algae, etc. as all "non-target"? This is relevant only for the green crab samples. *Still BF3*
+```{r}
+nontarget_taxa2 <- c(nontarget_taxa, "Bacillariophyta","Chlorophyta","Rhodophyta","Ascomycota","Rotifera","Oomycota")
+nontarget_taxa2
+```
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3,fig.width=8}
+nontarget_dat2 <- all_dat2 %>%
+  group_by(Locus,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop") %>%
+  left_join(filter(all_dat2, phylum %in% nontarget_taxa2) %>%
+              group_by(Locus,site) %>%
+              summarise(nontarget_reads=sum(nReads), .groups="drop")) %>%
+  mutate(preads=nontarget_reads/total_reads)
+
+ggplot(nontarget_dat2,aes(x=Locus,y=preads)) +
+  geom_col() +
+  facet_grid(cols=vars(site)) +
+  ylab("Proportion Reads\n Non-Target DNA") +
+  theme_bw()
+```
+<br>
+
+But mostly because the bacteria / amoeba reads from BF3 outnumber the algae, rotifer reads from Leray/LerayXT (note the Y axis):
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3,fig.width=8}
+nontarget_taxa3 <- c("Bacillariophyta","Chlorophyta","Rhodophyta","Ascomycota","Rotifera","Oomycota")
+nontarget_dat3 <- all_dat2 %>%
+  group_by(Locus,site) %>%
+  summarise(total_reads=sum(nReads), .groups="drop") %>%
+  left_join(filter(all_dat2, phylum %in% nontarget_taxa3) %>%
+              group_by(Locus,site) %>%
+              summarise(nontarget_reads=sum(nReads), .groups="drop")) %>%
+  mutate(preads=nontarget_reads/total_reads)
+
+ggplot(nontarget_dat3,aes(x=Locus,y=preads)) +
+  geom_col() +
+  facet_grid(cols=vars(site)) +
+  ylab("Proportion Reads\n Algae, Rotifer, Fungal DNA") +
+  theme_bw()
+```
+<br>
+
+
+Just take out the bacterial / amoeba dna for now.
 
 ```{r}
 all_dat3 <- all_dat2 %>% filter(!(phylum %in% c(nontarget_taxa))) %>%

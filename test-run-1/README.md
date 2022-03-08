@@ -53,7 +53,7 @@ De-noising the data (i.e., removing sequences that showed up in the controls) dr
 
 Bivalves: BF3/BR2 picked up *Mya* (genus) and *Ruditapes* (genus); Leray picked up *Ruditapes philippinarum* and *Limecola*. However, all of these were a very small proportion of reads and showed up in only 1 or 2 technical replicates (not all 3; and samples were not consistent between primers). If this is a true pattern, it suggests that Manila clam / bivalve DNA is rare in the samples we sequenced. In cases of rare DNA, we can increase our observations of that DNA (and therefore increase confidence of it's presence / taxonomic assignment) by running fewer samples on a sequencing run. 
 
-Eelgrass: None of the primer pairs picked up on Zostera spp. Using the program Geneious, I matched our primers to a reference genome for *Zostera marina*. From this matching exercise, I think it is unlikely we would pick up *Zostera marina* using Leray or LerayXT; there are too many mismatches between the (forward) primer sequences and the eelgrass sequence. BF3/BR2 only has one mismatch with the eelgrass sequence; but *Z. marina* DNA is in competition with invert DNA, which is what BF3/BR2 was designed to pick up. 
+Eelgrass: None of the primer pairs picked up on Zostera spp. Using the program Geneious, I matched our primers to a reference genome for *Zostera marina*. From this matching exercise, I think it is unlikely we would pick up *Zostera marina* using Leray or LerayXT; there are too many mismatches between the (forward) primer sequences and the eelgrass sequence. BF3/BR2 only has one mismatch with the eelgrass sequence; but *Z. marina* DNA is in competition with invert DNA, which is what BF3/BR2 was designed to pick up.
 
 Dungeness crab: The WACO samples had a pretty high proportion of DNA identified as Dungeness crab! No Dungeness crab in the Salish Sea samples, but there was quite a bit of *Hemigrapsus oregonensis*.
 <br>
@@ -105,5 +105,19 @@ The read depth (number of DNA sequences per sample) were a little lower for thes
 There weren't any fish in this data set, which isn't unexpected for these primers. BF3/BR2 did pick up fish, down to genus, in the Cordone et al. (2021) data set - but at a very low frequency. We can explore fish presence / absence by using the *MiFish* primer on a few samples. 
 
 There is some terrestrial insect DNA. I think it's worth waiting for future runs to determine if this is a true signal, or possible contamination from the SEFS lab (although it is not present in the controls).
+<br>
+<br>
 
+
+### Next Steps, 2-25-2022
+
+1. Which primer picked up a higher proportion of diatom, rotifer, and algae DNA?
+
+2. Sample and extract *Z. marina* DNA from the herbarium archives, and do a test PCR with the Leray and BF3/BR2 primers.
+
+3. Run an early Leray mock community with: EGC, Manila clam, Z. marina, Dungeness crab, + any fish species the Kelly lab currently has. 
+
+4. Use crab from clam beds (any month) for the next EGC sequencing run.
+
+5. Use Dungeness Spit crabs for the *MiFish* test. 
 
