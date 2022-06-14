@@ -109,15 +109,15 @@ There is some terrestrial insect DNA. I think it's worth waiting for future runs
 <br>
 
 
-### Next Steps, 2-25-2022
+### Next Steps, 2-25-2022 (updated 06-2022)
 
-1. Which primer picked up a higher proportion of diatom, rotifer, and algae DNA? **DONE**
+1. Which primer picked up a higher proportion of diatom, rotifer, and algae DNA? **DONE** -- see above
 
 2. Sample and extract *Z. marina* DNA from the herbarium archives, and do a test PCR with the Leray and BF3/BR2 primers.
 
 3. Run an early Leray mock community with: EGC, Manila clam, Z. marina, Dungeness crab, + any fish species the Kelly lab currently has. 
 
-4. Use crab from clam beds (any month) for the next EGC sequencing run.
+4. Use crab from clam beds (any month) for the next EGC sequencing run. **DONE** -- analysis in progress
 
-5. Use Dungeness Spit crabs for the *MiFish* test. 
+5. Use Dungeness Spit crabs for the *MiFish* test. **DONE** -- nothing amplified in the EGC samples!
 
