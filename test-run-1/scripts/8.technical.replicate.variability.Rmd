@@ -45,9 +45,9 @@ source(here('R','find_bottle_BCDs.R'))
 
 Specify user directories
 ```{r}
-indir_asv    <- 'test-lane-1/data/dada2'
-indir_meta   <- 'test-lane-1/data/cutadapt'
-outdir       <- 'test-lane-1/results'
+indir_asv    <- 'test-run-1/data/dada2'
+indir_meta   <- 'test-run-1/data/cutadapt'
+outdir       <- 'test-run-1/results'
 ```
 <br>
 <br>
@@ -112,6 +112,56 @@ if(any(checkdat$nPCR < 2)){
   checkdat <- dat.bf3 %>% group_by(bio) %>% summarise(nPCR=length(unique(tech)))
   message("any remaining samples to remove? ", paste0(any(checkdat$nPCR < 2)))
 } else{"all biological replicates have at least two or more PCR replicates. data ready for processing."}
+```
+<br>
+
+## Step 1.5: Pairwise variability
+
+Remove the WACO_2021_001a sample first.
+```{r}
+dat.bf3.filter <- dat.bf3 %>% filter(!(bio=="WACO_2021_001" & tech==1))
+```
+<br>
+
+```{r find_Pairwise_BCDs1}
+PCR_output <- find_pairwise_BCDs(dat.bf3.filter)
+PCR_output[[2]]
+```
+<br>
+
+Use the pairwise Bray-Curtis distances to complete an NMDS
+```{r}
+pair.dist <- PCR_output[[1]]
+bf3.mat <- PCR_output[[3]]
+```
+<br>
+
+```{r}
+bf3.nmds <- metaMDS(comm=bf3.mat,autotransform = FALSE, distance="bray", weakties=TRUE,maxit=1000, try=40, trymax=400)
+```
+<br>
+
+Format NMDS scores
+```{r}
+#extract NMDS scores (x and y coordinates)
+bf3.scores = as.data.frame(scores(bf3.nmds))
+
+#add columns to data frame 
+bf3.scores$Sample = rownames(bf3.scores)
+bf3.scores <- left_join(bf3.scores,dat.bf3.filter %>% mutate(Sample=paste0(bio,"_",tech)) %>%
+                                                    dplyr::select(Sample,site,bio,tech))
+bf3.scores <- bf3.scores %>% distinct()
+```
+<br>
+
+plot with ggplot
+```{r}
+ggplot(bf3.scores, aes(x = NMDS1, y = NMDS2)) + 
+    geom_point(size = 4, aes(col = site))+ 
+  geom_text_repel(aes(label=Sample), size=3, col="black", max.overlaps=20) +
+    labs(x = "NMDS1", colour = "Group", y = "NMDS2", shape = "Type")  + 
+    scale_colour_manual(values = c("gray88","#009E73", "#E69F00", "deepskyblue")) +
+  theme_bw()
 ```
 <br>
 

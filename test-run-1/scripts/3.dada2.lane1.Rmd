@@ -42,10 +42,10 @@ library(seqinr)
 User directories and inputs
 ```{r set up }
 # root directory for cutadapt
-cutadapt_dir <- "test-lane-1/data/cutadapt"
+cutadapt_dir <- "test-run-1/data/cutadapt"
 
 # output directory
-outdir <- "test-lane-1/data/dada2"
+outdir <- "test-run-1/data/dada2"
 
 # vector of different markers, as they appear in directories / metadata file
 markers <- c("BF3","Leray","LerayXT")

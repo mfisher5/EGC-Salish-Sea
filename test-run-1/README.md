@@ -60,7 +60,7 @@ Dungeness crab: The WACO samples had a pretty high proportion of DNA identified 
 
 **3. How much non-target DNA does each primer pick up?**
 
-Bacterial DNA and amoeba DNA: While there was relatively low proportions of non-target DNA overall, BF3/BR2 tended to pick up the most by a mile. 
+Bacterial DNA and amoeba DNA: While there was relatively low proportions of non-target DNA overall, BF3/BR2 tended to pick up the most by a mile. In the WACO and WASS 2020 samples, this amounted to ~5%, whereas in the WASS 2018 samples non-target DNA was > 15% of all reads.
 
 Algae, Diatoms, and Rotifers: Leray/LerayXT did pick up more DNA from algae, diatoms, rotifers, and fungi([plot here](https://github.com/mfisher5/EGC-Salish-Sea/blob/master/test-run-1/results/AllSamples_NonTarget_AlgaeRotifer.png?raw=true)); however, the proportion of reads that these taxa made up in the data were even lower than the proportion of bacterial / amoeba reads. Which means that combined, BF3/BR2 still picks up the most non-target DNA.
 

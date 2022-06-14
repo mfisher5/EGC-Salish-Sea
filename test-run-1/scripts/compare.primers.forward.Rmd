@@ -65,13 +65,13 @@ suffix2 <- 'blast_multipleIDs_taxonomy.csv'
 
 To answer this question, we need both the ASV table and the Blast taxonomy. 
 ```{r message=FALSE}
-asv.b   <- read_csv(here(indir_asv,'BF3', 'merged_ASV_table.csv'))
-asv.l   <- read_csv(here(indir_asv,'Leray', 'merged_ASV_table.csv'))
-asv.lxt <- read_csv(here(indir_asv,'LerayXT', 'merged_ASV_table.csv'))
+asv.b   <- read_csv(here(indir_asv,'BF3', 'F_ASV_table.csv'))
+asv.l   <- read_csv(here(indir_asv,'Leray', 'F_ASV_table.csv'))
+asv.lxt <- read_csv(here(indir_asv,'LerayXT', 'F_ASV_table.csv'))
 ```
 <br>
 
-Note that the processed blast taxonomy files have results from forward-only, reverse-only, and merged reads. for this comparison, let's focus only on merged reads.
+Note that the processed blast taxonomy files have results from forward-only, reverse-only, and merged reads. for this comparison, let's focus only on forward reads.
 ```{r message=FALSE}
 tax_key.b <- read_csv(here(indir_blast, paste0("lane1_bf3_",suffix2))) %>%
   rename("Hash"=representative)
@@ -79,7 +79,7 @@ tax_key.b %<>%  bind_rows(read_csv(here(indir_blast, paste0("lane1_bf3_",suffix1
               rename("Hash"=qseqid) %>%
                 mutate(taxID="unique", score="unique") %>%
               dplyr::select(all_of(colnames(tax_key.b)))) %>%
-  filter(dataset=="merged")
+  filter(dataset=="forward")
 
 tax_key.l <- read_csv(here(indir_blast, paste0("lane1_leray_",suffix2))) %>%
   rename("Hash"=representative)
@@ -87,7 +87,7 @@ tax_key.l %<>%  bind_rows(read_csv(here(indir_blast, paste0("lane1_leray_",suffi
               rename("Hash"=qseqid) %>%
                 mutate(taxID="unique", score="unique") %>%
               dplyr::select(all_of(colnames(tax_key.l)))) %>%
-  filter(dataset=="merged")
+  filter(dataset=="forward")
 
 tax_key.lxt <- read_csv(here(indir_blast, paste0("lane1_lerayxt_",suffix2))) %>%
   rename("Hash"=representative)
@@ -95,7 +95,7 @@ tax_key.lxt %<>%  bind_rows(read_csv(here(indir_blast, paste0("lane1_lerayxt_",s
               rename("Hash"=qseqid) %>%
                 mutate(taxID="unique", score="unique") %>%
               dplyr::select(all_of(colnames(tax_key.lxt)))) %>%
-  filter(dataset=="merged")
+  filter(dataset=="forward")
 ```
 <br>
 

@@ -1,0 +1,544 @@
+---
+title: "Check Manila Clam (R. philippinarum) sequences"
+author: "Mary Fisher, via Eily via Moncho"
+date: "3/24/2022"
+output: 
+  html_document:
+    toc: yes
+---
+
+# Description
+
+Re-run **DADA2** [tutorial here](https://benjjneb.github.io/dada2/tutorial.html) in order to match the amplicon sequence variant (ASV) output with input sequences. 
+
+This will (hopefully) let me trace the ASV matched to Manila clam in blast, to raw sequence data. 
+
+
+Certain decisions have to be made throughout the script, so *do not just knit this script with the existing values*. Go through each code chunk in R first, then knit. Certain code chunks will not re-run when the script is knitted, to avoid over-writing existing files.
+
+Input: demultiplexed fastq files, without barcodes / adapters / primers. 
+
+
+
+<br>
+
+# Set up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+if(!require("here")) {install.packages("here")}
+if(!require("tidyverse")) {install.packages("tidyverse")}
+if(!require("magrittr")) {install.packages("magrittr")}
+if(!require("digest")) {install.packages("digest")}
+if(!require("seqinr")) {install.packages("seqinr")}
+
+# if(!requireNamespace("BiocManager", quietly = TRUE)){install.packages("BiocManager")}
+# BiocManager::install("dada2", version = "3.10")
+
+library(dada2)
+library(digest)
+library(seqinr)
+```
+<br>
+
+User directories and inputs
+```{r set up }
+# root directory for cutadapt
+cutadapt_dir <- "test-run-1/data/cutadapt"
+
+# dada2 output directory
+outdir <- "test-run-1/data/dada2"
+
+# blast output directory
+blast_dir <- "test-run-1/data/blast/raw"
+
+# vector of different markers, as they appear in directories / metadata file
+markers <- c("BF3","Leray","LerayXT")
+```
+
+
+# BF3
+
+## Data
+
+read in sequencing metadata, file names.
+```{r message=FALSE}
+marker <- markers[1]
+marker.meta <- read_csv(here(cutadapt_dir, marker, paste0("cutadapt_output_metadata_",marker,".csv")))
+
+## forward and reverse filenames
+fnFs <- sort(list.files(path=here(cutadapt_dir,marker), pattern="_R1_001.fastq", full.names = TRUE))
+fnRs <- sort(list.files(path=here(cutadapt_dir,marker), pattern="_R2_001.fastq", full.names = TRUE))
+```
+<br>
+
+get the sample names, which will be used to name the filtered files.
+```{r}
+# sample.names <- marker.meta$Sample_name
+prefix <- paste0("Locus_",marker[1],"_")
+suffix <- paste0("_L001_R1_001.fastq.fastq")
+sample.names <- str_remove(marker.meta$file1, prefix)
+sample.names <- str_remove(sample.names,suffix)
+```
+<br>
+
+Plot forward read quality scores, one sample per group
+```{r echo=FALSE}
+plotQualityProfile(fnFs[c(1,2,6,19,25)])
+```
+<br>
+
+Plot forward read quality scores, one sample per group
+```{r echo=FALSE}
+plotQualityProfile(fnRs[c(1,2,6,19,25)])
+```
+<br>
+
+So the kangaroo, WACO.2021, and WASS.2020 samples look pretty good until ~70bp, and just ok until ~110-1200bp. The reverse reads are pretty atrocious, which is not unexpected for Illumina.
+
+## Filter and trim
+
+name the filtered sequencing data
+```{r}
+filtFs <- file.path(here(outdir, paste0(sample.names, "_F_filt.fastq.gz")))
+filtRs <- file.path(here(outdir, paste0(sample.names, "_R_filt.fastq.gz")))
+names(filtFs) <- sample.names
+names(filtRs) <- sample.names
+```
+<br>
+
+Filter and trim using `dada2`.
+
+- `truncLen` truncates the sequence length, and should be based on per-base quality scores. I'm using the length that Eily suggested , 120bp.
+- `maxEE` discards reads with high "expected errors" = $\sum(10^{-Q/10})$
+- `rm.phix` removes reads from PhiX spike
+- use `compress` to gzip the output fastqs
+```{r}
+out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(120,120),
+              maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
+              compress=TRUE, multithread=FALSE) # On Windows set multithread=FALSE
+head(out)
+```
+<br> 
+
+Before `dada2` can learn error rates, the files that have 0 reads need to be removed from the file list. 
+```{r eval=FALSE}
+files_to_remove <- as.data.frame(out) %>% 
+  rownames_to_column() %>%
+  filter(reads.out==0)
+
+if(dim(files_to_remove)[1] > 0){
+  files_to_remove %<>%
+    mutate(sample_names=str_remove(rowname, paste0("Locus_",marker,"_"))) %>%
+    mutate(sample_names=str_remove(sample_names,paste0("_L001_R1_001.fastq.fastq"))) %>%
+    separate(sample_names, into=c("id","sample_number"), sep=-2, remove=FALSE)
+  
+  filtFs <- filtFs[-which(names(filtFs) %in% files_to_remove$sample_names)]
+  filtRs <- filtRs[-which(names(filtRs) %in% files_to_remove$sample_names)]
+  marker.meta %<>% filter(!(Sample_name %in% files_to_remove$sample_number))
+  
+} else{message("no files to remove.")}
+```
+<br>
+
+Check new distribution of read depth
+```{r echo=FALSE}
+plotdat <- as.data.frame(out) %>%
+  pivot_longer(cols=c("reads.in","reads.out"), values_to="read_depth", names_to="step")
+ggplot(plotdat, aes(x=read_depth/1000,fill=step, alpha=step)) +
+  geom_histogram(binwidth=10) + 
+  scale_alpha_manual(values=c(1.0,0.6)) + 
+  labs(x="read depth (x1K)", y="number of samples") +theme_bw()
+```
+<br>
+
+## Errors
+
+The DADA2 algorithm makes use of a parametric error model (err) and every amplicon dataset has a different set of error rates.
+
+The `learnErrors` function will learn the amplicon-specific error model from the data. 
+
+```{r}
+errF <- learnErrors(filtFs)
+errR <- learnErrors(filtRs)
+```
+<br>
+```
+101185560 total bases in 843213 reads from 18 samples will be used for learning the error rates.
+101185560 total bases in 843213 reads from 18 samples will be used for learning the error rates.
+```
+
+<br>
+
+The DADA2 documentation suggests always visualizing the estimated error rates. Look for: whether the estimated error rates after convergence (black line) are a good fit to the observed error rates (black points). The red line shows the error rates expected under the nominal definition of the Q-score. Generally, error rates should rop with increasing quality scores.
+```{r}
+plotErrors(errF, nominalQ=TRUE)
+```
+<br>
+
+## Sample inference
+
+Apply the core sample inference algorithm to the filtered and trimmed data, using the new error model.
+
+And important note from the DADA2 doc: By default, the dada function processes each sample independently. However, pooling information across samples can increase sensitivity to sequence variants that may be present at very low frequencies in multiple samples. The dada2 package offers two types of pooling. dada(..., pool=TRUE) performs standard pooled processing, in which all samples are pooled together for sample inference. dada(..., pool="pseudo") performs pseudo-pooling, in which samples are processed independently after sharing information between samples, approximating pooled sample inference in linear time.
+
+```{r}
+dadaFs <- dada(filtFs, err=errF)
+dadaRs <- dada(filtRs, err=errR)
+
+# check it 
+dadaFs[[1]]
+```
+<br>
+
+
+## Match ASVs to Sequences
+
+It's possible to match dada's ASVs to original sequences using a combination of the "map" and "denoised" values saved into the `dada` object. 
+
+$denoised$: Integer vector, named by sequence valued by abundance, of the denoised sequences.
+$map$: Integer vector that maps the unique (index of `derep$unique`) to the denoised sequence (index of `dada$denoised`)
+
+```{r}
+ASV_to_Sequence <- data.frame(ASV_number=as.numeric(dadaFs$BF3_WACO_2021_003c_S18$map),
+                              Seq_number=seq(1,length(dadaFs$BF3_WACO_2021_003c_S18$map),by=1))
+ASVs <- as.data.frame(dadaFs$BF3_WACO_2021_003c_S18$denoised) %>%
+  rownames_to_column("ASV_sequence") %>%
+  rename("Seq_count"=`dadaFs$BF3_WACO_2021_003c_S18$denoised`) %>%
+  rownames_to_column("ASV_number") %>%
+  mutate(ASV_number=as.numeric(ASV_number))
+
+ASV_to_Sequence <- left_join(ASV_to_Sequence,ASVs,by="ASV_number")
+```
+<br>
+
+<br>
+I am looking at Sample #18: *BF3_WACO_2021_003c_S18_F_filt.fastq*
+
+The function **derepFastq** produces the `derep` object that was used to generate the ASVs. `derep$uniques` is a vector which provides the unique sequence and the abundance of reads. The index of each sequence in `derep$uniques` corresponds to `dada2$map`. 
+```{r}
+bf3.derep <- derepFastq(fls=filtFs[which(names(filtFs)=="BF3_WACO_2021_003c_S18")])
+length(bf3.derep$uniques)==length(dadaFs$BF3_WACO_2021_003c_S18$map)
+```
+<br>
+
+Format the data frame, and then join it by sequence number to the ASV dataframe
+```{r}
+bf3.seqs <- data.frame(Seq_sequence = names(bf3.derep$uniques)) %>%
+  rownames_to_column("Seq_number") %>%
+  mutate(Seq_number=as.numeric(Seq_number))
+
+
+ASV_to_Sequence <- left_join(ASV_to_Sequence,bf3.seqs,by="Seq_number")
+```
+<br>
+
+Check to make sure that all sequence numbers have a match
+```{r}
+any(!(ASV_to_Sequence$Seq_number %in% bf3.seqs$Seq_number))
+any(!(bf3.seqs$Seq_number %in% ASV_to_Sequence$Seq_number))
+```
+yay!
+
+Write out this data frame.
+```{r}
+write.csv(ASV_to_Sequence, here("test-run-1","data","find_manila_clam","BF3_WACO_2021_003c_S18_dadaASV_to_UniqueSeq.csv"),row.names=FALSE)
+```
+<br>
+
+```{r eval=FALSE}
+ASV_to_Sequence <- data.frame(ASV_number=as.numeric(dadaFs$BF3_WACO_2021_001c_S12$map),
+                              Seq_number=seq(1,length(dadaFs$BF3_WACO_2021_001c_S12$map),by=1))
+ASVs <- as.data.frame(dadaFs$BF3_WACO_2021_001c_S12$denoised) %>%
+  rownames_to_column("ASV_sequence") %>%
+  rename("Seq_count"=`dadaFs$BF3_WACO_2021_001c_S12$denoised`) %>%
+  rownames_to_column("ASV_number") %>%
+  mutate(ASV_number=as.numeric(ASV_number))
+
+ASV_to_Sequence <- left_join(ASV_to_Sequence,ASVs,by="ASV_number")
+
+bf3.derep <- derepFastq(fls=filtFs[which(names(filtFs)=="BF3_WACO_2021_001c_S12")])
+length(bf3.derep$uniques)==length(dadaFs$BF3_WACO_2021_001c_S12$map)
+
+bf3.seqs <- data.frame(Seq_sequence = names(bf3.derep$uniques)) %>%
+  rownames_to_column("Seq_number") %>%
+  mutate(Seq_number=as.numeric(Seq_number))
+
+
+ASV_to_Sequence <- left_join(ASV_to_Sequence,bf3.seqs,by="Seq_number")
+```
+<br>
+
+## Find Manila Clam
+
+Read in the blast output, to grab the sequence associated with Manila clam (or any other species of interest)
+```{r}
+blast_dat <- read_delim(here(blast_dir,"mf.lane1.bf3.forward.hashes.to.blast.txt"), delim="\t",
+                        col_names = FALSE)
+```
+<br>
+
+Find manila clam in the blast data and save the sequence
+```{r}
+clam_dat <- filter(blast_dat, X17=="Ruditapes" | X17=="Ruditapes philippinarum")
+clam_dat
+```
+<br>
+
+Filter the ASV-to-Sequence dataset to only include this sequence.
+```{r}
+clam_dat <- clam_dat %>% dplyr::select(X18,X1) %>% distinct() %>%
+  rename("ASV_sequence"=X18) %>%
+  left_join(ASV_to_Sequence)
+
+clam_dat %>% dplyr::select(ASV_number,Seq_number,Seq_count)
+```
+<br>
+
+Save this output, which can now be used to search back through `cutadapt` files and raw data. 
+```{r}
+write.csv(clam_dat, here("test-run-1","data","find_manila_clam","BF3_WASS_2020_234a_S65_dadaASV_to_UniqueSeq_clam.csv"),row.names=FALSE)
+```
+
+
+```{r eval=FALSE}
+egc_dat <- filter(blast_dat, X17=="Carcinus maenas")
+egc_dat <- egc_dat %>% dplyr::select(X18,X1) %>% distinct() %>%
+  rename("ASV_sequence"=X18) %>%
+  left_join(ASV_to_Sequence)
+```
+
+
+
+
+# Leray
+
+## Data
+
+read in sequencing metadata, file names.
+```{r message=FALSE}
+marker <- markers[2]
+marker.meta <- read_csv(here(cutadapt_dir, marker, paste0("cutadapt_output_metadata_",marker,".csv")))
+
+## forward and reverse filenames
+fnFs <- sort(list.files(path=here(cutadapt_dir,marker), pattern="_R1_001.fastq", full.names = TRUE))
+fnRs <- sort(list.files(path=here(cutadapt_dir,marker), pattern="_R2_001.fastq", full.names = TRUE))
+```
+<br>
+
+get the sample names, which will be used to name the filtered files.
+```{r}
+# sample.names <- marker.meta$Sample_name
+prefix <- paste0("Locus_",marker,"_")
+suffix <- paste0("_L001_R1_001.fastq.fastq")
+sample.names <- str_remove(marker.meta$file1, prefix)
+sample.names <- str_remove(sample.names,suffix)
+```
+<br>
+
+Plot forward read quality scores, one sample per group
+```{r echo=FALSE}
+plotQualityProfile(fnFs[c(1,2,6,19,25)])
+```
+<br>
+
+Plot reverse read quality scores, one sample per group
+```{r echo=FALSE}
+plotQualityProfile(fnRs[c(1,2,6,19,25)])
+```
+<br>
+
+So the kangaroo, WACO.2021, and WASS.2020 samples look pretty good until ~80bp, and just ok until ~110-120bp. The reverse reads are pretty atrocious, which is not unexpected for Illumina.
+
+## Filter and trim
+
+name the filtered sequencing data
+```{r}
+filtFs <- file.path(here(outdir, paste0(sample.names, "_F_filt.fastq.gz")))
+filtRs <- file.path(here(outdir, paste0(sample.names, "_R_filt.fastq.gz")))
+names(filtFs) <- sample.names
+names(filtRs) <- sample.names
+```
+<br>
+
+Filter and trim using `dada2`.
+
+- `truncLen` truncates the sequence length, and should be based on per-base quality scores. I'm using the length that Eily suggested , 120bp.
+- `maxEE` discards reads with high "expected errors" = $\sum(10^{-Q/10})$
+- `rm.phix` removes reads from PhiX spike
+- use `compress` to gzip the output fastqs
+```{r}
+out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(120,120),
+              maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
+              compress=TRUE, multithread=FALSE) # On Windows set multithread=FALSE
+head(out)
+```
+<br> 
+
+Before `dada2` can learn error rates, the files that have 0 reads need to be removed from the file list. 
+```{r eval=FALSE}
+files_to_remove <- as.data.frame(out) %>% 
+  rownames_to_column() %>%
+  filter(reads.out==0)
+
+if(dim(files_to_remove)[1] > 0){
+  files_to_remove %<>%
+    mutate(sample_names=str_remove(rowname, paste0("Locus_",marker,"_"))) %>%
+    mutate(sample_names=str_remove(sample_names,paste0("_L001_R1_001.fastq.fastq"))) %>%
+    separate(sample_names, into=c("id","sample_number"), sep=-2, remove=FALSE)
+  
+  filtFs <- filtFs[-which(names(filtFs) %in% files_to_remove$sample_names)]
+  filtRs <- filtRs[-which(names(filtRs) %in% files_to_remove$sample_names)]
+  marker.meta %<>% filter(!(Sample_name %in% files_to_remove$sample_number))
+  
+} else{message("no files to remove.")}
+```
+<br>
+
+Check new distribution of read depth
+```{r echo=FALSE}
+plotdat <- as.data.frame(out) %>%
+  pivot_longer(cols=c("reads.in","reads.out"), values_to="read_depth", names_to="step")
+ggplot(plotdat, aes(x=read_depth/1000,fill=step, alpha=step)) +
+  geom_histogram(binwidth=10) + 
+  scale_alpha_manual(values=c(1.0,0.6)) + 
+  labs(x="read depth (x1K)", y="number of samples") +theme_bw()
+```
+<br>
+
+## Errors
+
+The DADA2 algorithm makes use of a parametric error model (err) and every amplicon dataset has a different set of error rates.
+
+The `learnErrors` function will learn the amplicon-specific error model from the data. 
+
+```{r}
+errF <- learnErrors(filtFs)
+errR <- learnErrors(filtRs)
+```
+<br>
+```
+101937720 total bases in 849481 reads from 21 samples will be used for learning the error rates.
+101937720 total bases in 849481 reads from 21 samples will be used for learning the error rates.
+```
+
+<br>
+
+The DADA2 documentation suggests always visualizing the estimated error rates. Look for: whether the estimated error rates after convergence (black line) are a good fit to the observed error rates (black points). The red line shows the error rates expected under the nominal definition of the Q-score. Generally, error rates should drop with increasing quality scores.
+```{r}
+plotErrors(errR, nominalQ=TRUE)
+```
+<br>
+
+*Forward: The C2G error rates look a little weird in the middle rage of the QCs, but otherwise everything looks ok. *
+*Reverse: The G2C error rates look a little weird in the middle rage of the QCs, but otherwise everything looks ok. *
+
+
+## Sample inference
+
+Apply the core sample inference algorithm to the filtered and trimmed data, using the new error model.
+
+And important note from the DADA2 doc: By default, the dada function processes each sample independently. However, pooling information across samples can increase sensitivity to sequence variants that may be present at very low frequencies in multiple samples. The dada2 package offers two types of pooling. dada(..., pool=TRUE) performs standard pooled processing, in which all samples are pooled together for sample inference. dada(..., pool="pseudo") performs pseudo-pooling, in which samples are processed independently after sharing information between samples, approximating pooled sample inference in linear time.
+
+```{r}
+dadaFs <- dada(filtFs, err=errF)
+dadaRs <- dada(filtRs, err=errR)
+
+# check it 
+dadaFs[[1]]
+```
+<br>
+
+## Match ASVs to Sequences
+
+It's possible to match dada's ASVs to original sequences using a combination of the "map" and "denoised" values saved into the `dada` object. 
+
+$denoised$: Integer vector, named by sequence valued by abundance, of the denoised sequences.
+$map$: Integer vector that maps the unique (index of `derep$unique`) to the denoised sequence (index of `dada$denoised`)
+
+```{r}
+ASV_to_Sequence <- data.frame(ASV_number=as.numeric(dadaFs$Leray_WASS_2020_234a_S65$map),
+                              Seq_number=seq(1,length(dadaFs$Leray_WASS_2020_234a_S65$map),by=1))
+ASVs <- as.data.frame(dadaFs$Leray_WASS_2020_234a_S65$denoised) %>%
+  rownames_to_column("ASV_sequence") %>%
+  rownames_to_column("ASV_number") %>%
+  mutate(ASV_number=as.numeric(ASV_number)) %>%
+  rename("Seq_count"=`dadaFs$Leray_WASS_2020_234a_S65$denoised`)
+
+ASV_to_Sequence <- left_join(ASV_to_Sequence,ASVs,by="ASV_number")
+```
+<br>
+
+<br>
+I am looking at Sample #65: *Leray_WASS_2020_234a_S65_F_filt.fastq*
+
+The function **derepFastq** produces the `derep` object that was used to generate the ASVs. `derep$uniques` is a vector which provides the unique sequence and the abundance of reads. The index of each sequence in `derep$uniques` corresponds to `dada2$map`. 
+```{r}
+lry.derep <- derepFastq(fls=filtFs[which(names(filtFs)=="Leray_WASS_2020_234a_S65")])
+length(lry.derep$uniques)==length(dadaFs$Leray_WASS_2020_234a_S65$map)
+```
+<br>
+
+Format the data frame, and then join it by sequence number to the ASV dataframe
+```{r}
+lry.seqs <- data.frame(Seq_sequence = names(lry.derep$uniques)) %>%
+  rownames_to_column("Seq_number") %>%
+  mutate(Seq_number=as.numeric(Seq_number))
+
+
+ASV_to_Sequence <- left_join(ASV_to_Sequence,lry.seqs,by="Seq_number")
+```
+<br>
+
+Check to make sure that all sequence numbers have a match
+```{r}
+any(!(ASV_to_Sequence$Seq_number %in% lry.seqs$Seq_number))
+any(!(lry.seqs$Seq_number %in% ASV_to_Sequence$Seq_number))
+```
+yay!
+
+Write out this data frame.
+```{r}
+write.csv(ASV_to_Sequence, here("test-run-1","data","find_manila_clam","Leray_WASS_2020_234a_S65_dadaASV_to_UniqueSeq.csv"),row.names=FALSE)
+```
+<br>
+
+## Find Manila Clam
+
+Read in the blast output, to grab the sequence associated with Manila clam (or any other species of interest)
+```{r}
+blast_dat <- read_delim(here(blast_dir,"mf.lane1.leray.forward.hashes.to.blast.txt"), delim="\t",
+                        col_names = FALSE)
+```
+<br>
+
+Find manila clam in the blast data and save the sequence
+```{r}
+clam_dat <- filter(blast_dat, X17=="Ruditapes" | X17=="Ruditapes philippinarum")
+clam_dat
+```
+<br>
+
+Filter the ASV-to-Sequence dataset to only include this sequence.
+```{r}
+clam_dat <- clam_dat %>% dplyr::select(X18) %>% distinct() %>%
+  rename("ASV_sequence"=X18) %>%
+  left_join(ASV_to_Sequence)
+
+clam_dat %>% dplyr::select(ASV_number,Seq_number,Seq_count)
+```
+<br>
+
+Save this output, which can now be used to search back through `cutadapt` files and raw data. 
+```{r}
+write.csv(clam_dat, here("test-run-1","data","find_manila_clam","Leray_WASS_2020_234a_S65_dadaASV_to_UniqueSeq_clam.csv"),row.names=FALSE)
+```
+
+
+
+
+
+
+
+
