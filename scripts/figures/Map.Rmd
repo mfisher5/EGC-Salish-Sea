@@ -1,0 +1,94 @@
+---
+title: "Puget Sound Site Map"
+author: "M Fisher"
+date: '2022-09-12'
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+# Description
+
+Map sampling sites for reporting results.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(here)
+library(magrittr)
+library(janitor)
+library(ggplot2)
+library(ggrepel)
+library(ggmap)
+```
+
+What file contains the site coordinates and sample IDs?
+```{r echo=TRUE}
+metadat <- 'data/WASS_metadata.csv'
+```
+<br>
+
+# Sept Progress Report
+
+```{r include=FALSE}
+dat <- read_csv(here(metadat)) %>% clean_names()
+dat_summary <- dat %>% group_by(site, lat, long) %>%
+  summarise(n=length(unique(sample_id)))
+```
+<br>
+
+Map all sampling sites in Willapa Bay. 
+```{r eval=FALSE}
+## generate basemap from google maps
+ggmap::register_google(key = "zd76vn8aM0DwO-ImFMVHUvNwIdk=")
+myLocation <- c(-123.5, 47.8, -122.1, 49.0)
+
+ps <- get_stamenmap(bbox=myLocation,
+                     maptype="terrain", crop=FALSE, force=TRUE)
+saveRDS(ps,here("data","nps_terrain_background.rds"))
+```
+```{r}
+ps <- readRDS(here("data","nps_terrain_background.rds"))
+
+ggmap(ps) +
+  geom_point(data=dat_summary, aes(x=long,y=lat), size=6) + 
+  geom_label_repel(data=dat_summary, aes(x=long,y=lat, label=site),
+                   segment.colour = 'black',
+                   nudge_x=c(-0.4,0.4),
+                   force=1, force_pull=0.2, segment.size=0.05, size=6) +
+  theme(axis.title=element_blank(),
+        axis.text=element_blank(),
+        legend.title=element_blank())
+```
+<br>
+
+```{r}
+png(here("data","northps_map.png"), width=800, height=1000)
+ggmap(ps) +
+  geom_point(data=dat_summary, aes(x=long,y=lat), size=6) + 
+  geom_label_repel(data=dat_summary, aes(x=long,y=lat, label=site),
+                   segment.colour = 'black',
+                   nudge_x=c(-0.4,0.4),
+                   force=1, force_pull=0.2, segment.size=0.05, size=12) +
+  theme(axis.title=element_blank(),
+        axis.text=element_blank(),
+        legend.title=element_blank())
+dev.off()
+```
+<br>
+
+<br>
+
+```{r}
+ggplot(dat, )
+```
+
+
+
+
+
+
+
+
+
