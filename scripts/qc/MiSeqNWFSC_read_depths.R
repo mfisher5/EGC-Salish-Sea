@@ -36,6 +36,19 @@ fig1a <- ggplot(dat, aes(x=nreads, fill=direction),alpha=0.7) +
                           axis.title=element_text(size=14),
                           title=element_text(size=16))
 fig1a
+png(here::here("data","raw","qc","Lane-2-read-depth-directional.png"))
+fig1a
+dev.off()
+
+dat_totals <- dat %>% group_by(sample_id) %>% summarise(total_reads=sum(nreads))
+fig1c <- ggplot(dat, aes(x=nreads),alpha=0.7) +
+  geom_histogram() +
+  labs(x="Reads per Sample", y="No. Samples",
+       title="MiSeq Lane 2") +
+  theme_classic() + theme(axis.text.x=element_text(size=12),
+                          axis.title=element_text(size=14),
+                          title=element_text(size=16))
+fig1a
 png(here::here("data","raw","qc","Lane-2-read-depth.png"))
 fig1a
 dev.off()
@@ -73,7 +86,7 @@ fig1b
 dev.off()
 
 
-##--- samples with read depths below 70,000
+##--- samples with read depths below 1,000
 
 dat_lowRD <- dat_expand %>%
   filter(nreads < 1000) %>%
