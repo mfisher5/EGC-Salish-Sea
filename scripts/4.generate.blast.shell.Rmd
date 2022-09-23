@@ -1,0 +1,251 @@
+---
+title: "prep.blast"
+author: "M Fisher - modified from Eily Allan, Erin D'Agnese, Ramon Gallego"
+date: "01/17/2022"
+output:   
+  html_notebook:
+    toc: true
+    toc_float: true
+---
+
+
+# Description 
+
+This code sets up the bash shell script used to match the ASV DNA sequences against NCBI's nucleotide database, with Blast.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<br>
+
+
+# In the terminal...
+
+Update the blast database
+```{bash eval=FALSE}
+./update_blastdb.pl --decompress nt
+```
+<br>
+
+
+Use a shell script to compare each marker's fasta files to the database. 
+
+## BF3
+I asked Ryan to run the following script for me on the CEG's Hyak node
+```{bash eval=FALSE}
+#!/bin/bash
+
+PATH=$PATH:/mnt/nfs/home/rpkelly/ncbi-blast-2.8.1+/bin
+export BLASTDB="/mnt/nfs/home/rpkelly/blastdb"
+
+BLAST_DB='/mnt/nfs/home/rpkelly/blastdb/nt'
+# BLAST PARAMETERS
+PERCENT_IDENTITY="85"
+WORD_SIZE="30"
+EVALUE="1e-30"
+# number of matches recorded in the alignment:
+MAXIMUM_MATCHES="50"
+CULLING="5"
+
+	################################################################################
+	# BLAST CLUSTERS
+	################################################################################
+	echo $(date +%H:%M) "BLASTing..."
+
+	blast_output="/mnt/nfs/home/rpkelly/processed/mf.lane1.bf3.merged.hashes.to.blast.txt" 
+	blastn \
+		-query "/mnt/nfs/home/rpkelly/raw/mf_merged_hash_key.fasta
+" \
+		-db "${BLAST_DB}" \
+		-num_threads 16 \
+		-perc_identity "${PERCENT_IDENTITY}" \
+		-word_size "${WORD_SIZE}" \
+		-evalue "${EVALUE}" \
+		-max_target_seqs "${MAXIMUM_MATCHES}" \
+		-culling_limit="${CULLING}" \
+		-outfmt "6 qseqid sseqid sacc pident length mismatch gapopen qcovus qstart qend sstart send evalue bitscore staxids qlen sscinames sseq" \
+		-out "${blast_output}"
+
+
+	echo $(date +%H:%M) "BLASTing second batch..."
+
+	blast_output="/mnt/nfs/home/rpkelly/processed/mf.lane1.bf3.forward.hashes.to.blast.txt" 
+	blastn \
+		-query "/mnt/nfs/home/rpkelly/raw/mf_F_hash_key.fasta" \
+		-db "${BLAST_DB}" \
+		-num_threads 16 \
+		-perc_identity "${PERCENT_IDENTITY}" \
+		-word_size "${WORD_SIZE}" \
+		-evalue "${EVALUE}" \
+		-max_target_seqs "${MAXIMUM_MATCHES}" \
+		-culling_limit="${CULLING}" \
+		-outfmt "6 qseqid sseqid sacc pident length mismatch gapopen qcovus qstart qend sstart send evalue bitscore staxids qlen sscinames sseq" \
+		-out "${blast_output}"
+		
+		
+echo $(date +%H:%M) "BLASTing final batch..."
+
+	blast_output="/mnt/nfs/home/rpkelly/processed/mf.lane1.bf3.reverse.hashes.to.blast.txt" 
+	blastn \
+		-query "/mnt/nfs/home/rpkelly/raw/mf_R_hash_key.fasta" \
+		-db "${BLAST_DB}" \
+		-num_threads 16 \
+		-perc_identity "${PERCENT_IDENTITY}" \
+		-word_size "${WORD_SIZE}" \
+		-evalue "${EVALUE}" \
+		-max_target_seqs "${MAXIMUM_MATCHES}" \
+		-culling_limit="${CULLING}" \
+		-outfmt "6 qseqid sseqid sacc pident length mismatch gapopen qcovus qstart qend sstart send evalue bitscore staxids qlen sscinames sseq" \
+		-out "${blast_output}"
+
+
+```
+<br>
+
+## Leray
+```{bash eval=FALSE}
+#!/bin/bash
+
+PATH=$PATH:/mnt/nfs/home/rpkelly/ncbi-blast-2.8.1+/bin
+export BLASTDB="/mnt/nfs/home/rpkelly/blastdb"
+
+BLAST_DB='/mnt/nfs/home/rpkelly/blastdb/nt'
+# BLAST PARAMETERS
+PERCENT_IDENTITY="85"
+WORD_SIZE="30"
+EVALUE="1e-30"
+# number of matches recorded in the alignment:
+MAXIMUM_MATCHES="50"
+CULLING="5"
+
+	################################################################################
+	# BLAST CLUSTERS
+	################################################################################
+	echo $(date +%H:%M) "BLASTing..."
+
+	blast_output="/mnt/nfs/home/rpkelly/processed/mf.lane1.leray.merged.hashes.to.blast.txt" 
+	blastn \
+		-query "/mnt/nfs/home/rpkelly/raw/leray_merged_hash_key.fasta
+" \
+		-db "${BLAST_DB}" \
+		-num_threads 16 \
+		-perc_identity "${PERCENT_IDENTITY}" \
+		-word_size "${WORD_SIZE}" \
+		-evalue "${EVALUE}" \
+		-max_target_seqs "${MAXIMUM_MATCHES}" \
+		-culling_limit="${CULLING}" \
+		-outfmt "6 qseqid sseqid sacc pident length mismatch gapopen qcovus qstart qend sstart send evalue bitscore staxids qlen sscinames sseq" \
+		-out "${blast_output}"
+
+
+	echo $(date +%H:%M) "BLASTing second batch..."
+
+	blast_output="/mnt/nfs/home/rpkelly/processed/mf.lane1.leray.forward.hashes.to.blast.txt" 
+	blastn \
+		-query "/mnt/nfs/home/rpkelly/raw/leray_F_hash_key.fasta" \
+		-db "${BLAST_DB}" \
+		-num_threads 16 \
+		-perc_identity "${PERCENT_IDENTITY}" \
+		-word_size "${WORD_SIZE}" \
+		-evalue "${EVALUE}" \
+		-max_target_seqs "${MAXIMUM_MATCHES}" \
+		-culling_limit="${CULLING}" \
+		-outfmt "6 qseqid sseqid sacc pident length mismatch gapopen qcovus qstart qend sstart send evalue bitscore staxids qlen sscinames sseq" \
+		-out "${blast_output}"
+		
+		
+echo $(date +%H:%M) "BLASTing final batch..."
+
+	blast_output="/mnt/nfs/home/rpkelly/processed/mf.lane1.leray.reverse.hashes.to.blast.txt" 
+	blastn \
+		-query "/mnt/nfs/home/rpkelly/raw/leray_R_hash_key.fasta" \
+		-db "${BLAST_DB}" \
+		-num_threads 16 \
+		-perc_identity "${PERCENT_IDENTITY}" \
+		-word_size "${WORD_SIZE}" \
+		-evalue "${EVALUE}" \
+		-max_target_seqs "${MAXIMUM_MATCHES}" \
+		-culling_limit="${CULLING}" \
+		-outfmt "6 qseqid sseqid sacc pident length mismatch gapopen qcovus qstart qend sstart send evalue bitscore staxids qlen sscinames sseq" \
+		-out "${blast_output}"
+
+
+```
+<br>
+
+
+## LerayXT
+```{bash eval=FALSE}
+#!/bin/bash
+
+PATH=$PATH:/mnt/nfs/home/rpkelly/ncbi-blast-2.8.1+/bin
+export BLASTDB="/mnt/nfs/home/rpkelly/blastdb"
+
+BLAST_DB='/mnt/nfs/home/rpkelly/blastdb/nt'
+# BLAST PARAMETERS
+PERCENT_IDENTITY="85"
+WORD_SIZE="30"
+EVALUE="1e-30"
+# number of matches recorded in the alignment:
+MAXIMUM_MATCHES="50"
+CULLING="5"
+
+	################################################################################
+	# BLAST CLUSTERS
+	################################################################################
+	echo $(date +%H:%M) "BLASTing..."
+
+	blast_output="/mnt/nfs/home/rpkelly/processed/mf.lane1.lerayxt.merged.hashes.to.blast.txt" 
+	blastn \
+		-query "/mnt/nfs/home/rpkelly/raw/lerayxt_merged_hash_key.fasta
+" \
+		-db "${BLAST_DB}" \
+		-num_threads 16 \
+		-perc_identity "${PERCENT_IDENTITY}" \
+		-word_size "${WORD_SIZE}" \
+		-evalue "${EVALUE}" \
+		-max_target_seqs "${MAXIMUM_MATCHES}" \
+		-culling_limit="${CULLING}" \
+		-outfmt "6 qseqid sseqid sacc pident length mismatch gapopen qcovus qstart qend sstart send evalue bitscore staxids qlen sscinames sseq" \
+		-out "${blast_output}"
+
+
+	echo $(date +%H:%M) "BLASTing second batch..."
+
+	blast_output="/mnt/nfs/home/rpkelly/processed/mf.lane1.lerayxt.forward.hashes.to.blast.txt" 
+	blastn \
+		-query "/mnt/nfs/home/rpkelly/raw/lerayxt_F_hash_key.fasta" \
+		-db "${BLAST_DB}" \
+		-num_threads 16 \
+		-perc_identity "${PERCENT_IDENTITY}" \
+		-word_size "${WORD_SIZE}" \
+		-evalue "${EVALUE}" \
+		-max_target_seqs "${MAXIMUM_MATCHES}" \
+		-culling_limit="${CULLING}" \
+		-outfmt "6 qseqid sseqid sacc pident length mismatch gapopen qcovus qstart qend sstart send evalue bitscore staxids qlen sscinames sseq" \
+		-out "${blast_output}"
+		
+		
+echo $(date +%H:%M) "BLASTing final batch..."
+
+	blast_output="/mnt/nfs/home/rpkelly/processed/mf.lane1.lerayxt.reverse.hashes.to.blast.txt" 
+	blastn \
+		-query "/mnt/nfs/home/rpkelly/raw/lerayxt_R_hash_key.fasta" \
+		-db "${BLAST_DB}" \
+		-num_threads 16 \
+		-perc_identity "${PERCENT_IDENTITY}" \
+		-word_size "${WORD_SIZE}" \
+		-evalue "${EVALUE}" \
+		-max_target_seqs "${MAXIMUM_MATCHES}" \
+		-culling_limit="${CULLING}" \
+		-outfmt "6 qseqid sseqid sacc pident length mismatch gapopen qcovus qstart qend sstart send evalue bitscore staxids qlen sscinames sseq" \
+		-out "${blast_output}"
+
+
+```
+<br>
+<br>
+
+# Next Steps
+
+Then use the 5a.classify.blast.EA.Rmd file to turn the blast results into taxonomy (via LCA) and then we can go back to each run and add the classifications to ASVs that did not get classified on the tree but the BLAST results did have a good (species or genus level) annotation.  

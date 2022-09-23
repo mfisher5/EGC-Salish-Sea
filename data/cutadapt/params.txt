@@ -1,0 +1,2 @@
+fastqfolder,sequencingmetadatafile,outputfolder,minlength
+C:/Users/mfisher5/Documents/EGC-Salish-Sea/data/raw/run2,C:/Users/mfisher5/Documents/EGC-Salish-Sea/data/metadata-cutadapt-input-run-2.csv,C:/Users/mfisher5/Documents/EGC-Salish-Sea/data/cutadapt,100

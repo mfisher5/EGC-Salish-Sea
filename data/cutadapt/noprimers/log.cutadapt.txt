@@ -1,0 +1,108 @@
+Traceback (most recent call last):
+  File "script.py", line 2, in <module>
+  File "cutadapt\__main__.py", line 1016, in main_cli
+  File "cutadapt\__main__.py", line 1078, in main
+  File "cutadapt\__main__.py", line 532, in open_output_files
+  File "cutadapt\utils.py", line 222, in xopen_pair
+  File "cutadapt\utils.py", line 214, in xopen_or_none
+  File "cutadapt\utils.py", line 204, in xopen
+  File "cutadapt\utils.py", line 51, in open_raise_limit
+  File "xopen\__init__.py", line 1085, in xopen
+OSError: [Errno 22] Invalid argument: 'C:/Users/mfisher5/Documents/EGC-Salish-Sea/data/cutadapt/noprimers/Locus_Leray_"NA_S9_L001_R1_001.fastq.fastq'
+[18724] Failed to execute script 'script' due to unhandled exception!
+Traceback (most recent call last):
+  File "script.py", line 2, in <module>
+  File "cutadapt\__main__.py", line 1016, in main_cli
+  File "cutadapt\__main__.py", line 1078, in main
+  File "cutadapt\__main__.py", line 532, in open_output_files
+  File "cutadapt\utils.py", line 222, in xopen_pair
+  File "cutadapt\utils.py", line 214, in xopen_or_none
+  File "cutadapt\utils.py", line 204, in xopen
+  File "cutadapt\utils.py", line 51, in open_raise_limit
+  File "xopen\__init__.py", line 1085, in xopen
+OSError: [Errno 22] Invalid argument: 'C:/Users/mfisher5/Documents/EGC-Salish-Sea/data/cutadapt/noprimers/Locus_Leray_"NA_S85_L001_R1_001.fastq.fastq'
+[20272] Failed to execute script 'script' due to unhandled exception!
+Traceback (most recent call last):
+  File "script.py", line 2, in <module>
+  File "cutadapt\__main__.py", line 1016, in main_cli
+  File "cutadapt\__main__.py", line 1078, in main
+  File "cutadapt\__main__.py", line 532, in open_output_files
+  File "cutadapt\utils.py", line 222, in xopen_pair
+  File "cutadapt\utils.py", line 214, in xopen_or_none
+  File "cutadapt\utils.py", line 204, in xopen
+  File "cutadapt\utils.py", line 51, in open_raise_limit
+  File "xopen\__init__.py", line 1085, in xopen
+OSError: [Errno 22] Invalid argument: 'C:/Users/mfisher5/Documents/EGC-Salish-Sea/data/cutadapt/noprimers/Locus_Leray_"NA_S86_L001_R1_001.fastq.fastq'
+[19108] Failed to execute script 'script' due to unhandled exception!
+Traceback (most recent call last):
+  File "script.py", line 2, in <module>
+  File "cutadapt\__main__.py", line 1016, in main_cli
+  File "cutadapt\__main__.py", line 1078, in main
+  File "cutadapt\__main__.py", line 532, in open_output_files
+  File "cutadapt\utils.py", line 222, in xopen_pair
+  File "cutadapt\utils.py", line 214, in xopen_or_none
+  File "cutadapt\utils.py", line 204, in xopen
+  File "cutadapt\utils.py", line 51, in open_raise_limit
+  File "xopen\__init__.py", line 1085, in xopen
+OSError: [Errno 22] Invalid argument: 'C:/Users/mfisher5/Documents/EGC-Salish-Sea/data/cutadapt/noprimers/Locus_Leray_"NA_S87_L001_R1_001.fastq.fastq'
+[10108] Failed to execute script 'script' due to unhandled exception!
+Traceback (most recent call last):
+  File "script.py", line 2, in <module>
+  File "cutadapt\__main__.py", line 1016, in main_cli
+  File "cutadapt\__main__.py", line 1078, in main
+  File "cutadapt\__main__.py", line 532, in open_output_files
+  File "cutadapt\utils.py", line 222, in xopen_pair
+  File "cutadapt\utils.py", line 214, in xopen_or_none
+  File "cutadapt\utils.py", line 204, in xopen
+  File "cutadapt\utils.py", line 51, in open_raise_limit
+  File "xopen\__init__.py", line 1085, in xopen
+OSError: [Errno 22] Invalid argument: 'C:/Users/mfisher5/Documents/EGC-Salish-Sea/data/cutadapt/noprimers/Locus_Leray_"NA_S88_L001_R1_001.fastq.fastq'
+[13772] Failed to execute script 'script' due to unhandled exception!
+Traceback (most recent call last):
+  File "script.py", line 2, in <module>
+  File "cutadapt\__main__.py", line 1016, in main_cli
+  File "cutadapt\__main__.py", line 1078, in main
+  File "cutadapt\__main__.py", line 532, in open_output_files
+  File "cutadapt\utils.py", line 222, in xopen_pair
+  File "cutadapt\utils.py", line 214, in xopen_or_none
+  File "cutadapt\utils.py", line 204, in xopen
+  File "cutadapt\utils.py", line 51, in open_raise_limit
+  File "xopen\__init__.py", line 1085, in xopen
+OSError: [Errno 22] Invalid argument: 'C:/Users/mfisher5/Documents/EGC-Salish-Sea/data/cutadapt/noprimers/Locus_Leray_"NA_S90_L001_R1_001.fastq.fastq'
+[1708] Failed to execute script 'script' due to unhandled exception!
+Traceback (most recent call last):
+  File "script.py", line 2, in <module>
+  File "cutadapt\__main__.py", line 1016, in main_cli
+  File "cutadapt\__main__.py", line 1078, in main
+  File "cutadapt\__main__.py", line 532, in open_output_files
+  File "cutadapt\utils.py", line 222, in xopen_pair
+  File "cutadapt\utils.py", line 214, in xopen_or_none
+  File "cutadapt\utils.py", line 204, in xopen
+  File "cutadapt\utils.py", line 51, in open_raise_limit
+  File "xopen\__init__.py", line 1085, in xopen
+OSError: [Errno 22] Invalid argument: 'C:/Users/mfisher5/Documents/EGC-Salish-Sea/data/cutadapt/noprimers/Locus_Leray_"NA_S92_L001_R1_001.fastq.fastq'
+[7256] Failed to execute script 'script' due to unhandled exception!
+Traceback (most recent call last):
+  File "script.py", line 2, in <module>
+  File "cutadapt\__main__.py", line 1016, in main_cli
+  File "cutadapt\__main__.py", line 1078, in main
+  File "cutadapt\__main__.py", line 532, in open_output_files
+  File "cutadapt\utils.py", line 222, in xopen_pair
+  File "cutadapt\utils.py", line 214, in xopen_or_none
+  File "cutadapt\utils.py", line 204, in xopen
+  File "cutadapt\utils.py", line 51, in open_raise_limit
+  File "xopen\__init__.py", line 1085, in xopen
+OSError: [Errno 22] Invalid argument: 'C:/Users/mfisher5/Documents/EGC-Salish-Sea/data/cutadapt/noprimers/Locus_Leray_"NA_S93_L001_R1_001.fastq.fastq'
+[13148] Failed to execute script 'script' due to unhandled exception!
+Traceback (most recent call last):
+  File "script.py", line 2, in <module>
+  File "cutadapt\__main__.py", line 1016, in main_cli
+  File "cutadapt\__main__.py", line 1078, in main
+  File "cutadapt\__main__.py", line 532, in open_output_files
+  File "cutadapt\utils.py", line 222, in xopen_pair
+  File "cutadapt\utils.py", line 214, in xopen_or_none
+  File "cutadapt\utils.py", line 204, in xopen
+  File "cutadapt\utils.py", line 51, in open_raise_limit
+  File "xopen\__init__.py", line 1085, in xopen
+OSError: [Errno 22] Invalid argument: 'C:/Users/mfisher5/Documents/EGC-Salish-Sea/data/cutadapt/noprimers/Locus_Leray_"NA_S94_L001_R1_001.fastq.fastq'
+[20292] Failed to execute script 'script' due to unhandled exception!

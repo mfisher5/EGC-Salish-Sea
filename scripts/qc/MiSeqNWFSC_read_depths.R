@@ -41,16 +41,16 @@ fig1a
 dev.off()
 
 dat_totals <- dat %>% group_by(sample_id) %>% summarise(total_reads=sum(nreads))
-fig1c <- ggplot(dat, aes(x=nreads),alpha=0.7) +
+fig1c <- ggplot(dat_totals, aes(x=total_reads/10000),alpha=0.7) +
   geom_histogram() +
-  labs(x="Reads per Sample", y="No. Samples",
+  labs(x="Reads per Sample (x10K)", y="No. Samples",
        title="MiSeq Lane 2") +
   theme_classic() + theme(axis.text.x=element_text(size=12),
                           axis.title=element_text(size=14),
                           title=element_text(size=16))
-fig1a
+fig1c
 png(here::here("data","raw","qc","Lane-2-read-depth.png"))
-fig1a
+fig1c
 dev.off()
 
 

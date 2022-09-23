@@ -3,6 +3,10 @@ data/raw/*
 !data/primer_sequences.csv
 !data/raw/EGC_Diet_Lane1_indexes-Fisher-corrected.csv
 
+data/cutadapt/noprimers/*
+!data/cutadapt/noprimers/output.metadata.csv
+!data/cutadapt/noprimers/log.cutadapt.txt
+
 data/databases/*
 
 test-run-1/data/*
@@ -22,3 +26,5 @@ test-run-1/for-Ryan-BLAST2.zip
 
 R/*.exe
 .Rproj.user
+
+programs/*
