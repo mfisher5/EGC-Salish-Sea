@@ -9,6 +9,10 @@ output: html_document
 
 These notes describe the bash shell script used to match the ASV DNA sequences from DADA2 to NCBI's nucleotide database. I run everything in an **Ubuntu for Windows** terminal, not through R. 
 
+**Ubuntu for Windows**: Ubuntu 22.04 LTS app, run in Windows 10
+
+*Dependencies*: wget, gunzip (downloaded using `sudo apt install`)
+
 
 
 # Installing / Updating BLAST
@@ -32,15 +36,16 @@ sudo apt-get install libgomp1
 
 The command in the terminal will be: 
 ```
-bash /mnt/c/Users/mfisher5/Documents/EGC-Willapa-Bay/scripts/3_run_blast_run2.sh
+cd /mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/bin/
+bash /mnt/c/Users/mfisher5/Documents/EGC-Salish-Sea/scripts/3_run_blast_run2.sh
 ```
 
 ```{bash eval=FALSE}
-#!/bin/bash
+#!/usr/bin/env bash
 PATH=$PATH:/mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/bin
 export BLASTDB="/mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/blastdb"
 BLAST_DB='/mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/blastdb/nt'
-blast_output='/mnt/c/Users/mfisher5/Documents/EGC-Willapa-Bay/data/blast/run_2/hash_key_blast_2022-06-20.fasta'
+blast_output='/mnt/c/Users/mfisher5/Documents/EGC-Salish-Sea/data/blast/hash_key_blast_2022-09-23.fasta'
 # BLAST PARAMETERS
 PERCENT_IDENTITY="85"
 WORD_SIZE="30"
@@ -48,13 +53,14 @@ EVALUE="1e-30"
 # number of matches recorded in the alignment:
 MAXIMUM_MATCHES="50"
 CULLING="5"
+
+
 	################################################################################
 	# BLAST CLUSTERS
 	################################################################################
-	echo $(date +%H:%M) "BLASTing..."
-	blast_output="/mnt/c/Users/mfisher5/Documents/EGC-Willapa-Bay/data/blast/run_2_blast_output.fasta" 
+	echo $(date +%H:%M) "BLASTing..." 
 	./blastn \
-		-query "/mnt/c/Users/mfisher5/Documents/EGC-Willapa-Bay/data/dada2/run_2/hash_key.fasta
+		-query "/mnt/c/Users/mfisher5/Documents/EGC-Salish-Sea/data/dada2/hash_key.fasta
 " \
 		-db "${BLAST_DB}" \
 		-num_threads 16 \

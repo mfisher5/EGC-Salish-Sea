@@ -15,3 +15,4 @@ CULLING="5"
 ################################################################################
 echo $(date +%H:%M) "BLASTing..."
 ./blastn -query "/mnt/c/Users/mfisher5/Documents/EGC-Salish-Sea/data/dada2/hash_key.fasta" -db "${BLAST_DB}" -num_threads 16 -perc_identity "${PERCENT_IDENTITY}" -word_size "${WORD_SIZE}" -evalue "${EVALUE}" -max_target_seqs "${MAXIMUM_MATCHES}" -culling_limit="${CULLING}" -outfmt "6 qseqid sseqid sacc pident length mismatch gapopen qcovus qstart qend sstart send evalue bitscore staxids qlen sscinames sseq" -out "${blast_output}"
+
