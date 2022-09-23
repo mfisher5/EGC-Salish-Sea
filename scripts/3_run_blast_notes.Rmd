@@ -1,13 +1,13 @@
 ---
 title: "Running BLAST shell (notes)"
-author: "M Fisher (Eily, Moncho)"
-date: '2022-06-20'
+author: "M Fisher (via Eily via Moncho)"
+date: '2022-09-23'
 output: html_document
 ---
 
 # Description 
 
-These notes describe the bash shell script used to match the ASV DNA sequences from DADA2 to NCBI's nucleotide database. I run everything in an Ubuntu for Windows terminal, not through R. 
+These notes describe the bash shell script used to match the ASV DNA sequences from DADA2 to NCBI's nucleotide database. I run everything in an **Ubuntu for Windows** terminal, not through R. 
 
 
 
@@ -17,7 +17,8 @@ Install the blast database - see [Install BLAST](https://github.com/mfisher5/EGC
 
 Update the blast database
 ```{bash eval=FALSE}
-./update_blastdb.pl --decompress nt
+cd /mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/blastdb
+../bin/update_blastdb.pl --decompress nt
 ```
 <br>
 
@@ -36,9 +37,9 @@ bash /mnt/c/Users/mfisher5/Documents/EGC-Willapa-Bay/scripts/3_run_blast_run2.sh
 
 ```{bash eval=FALSE}
 #!/bin/bash
-PATH=$PATH:/mnt/c/Users/mfisher5/Documents/sci_programs/ncbi-blast-2.13.0+/bin
-export BLASTDB="/mnt/c/Users/mfisher5/Documents/sci_programs/ncbi-blast-2.13.0+/blastdb"
-BLAST_DB='/mnt/c/Users/mfisher5/Documents/sci_programs/ncbi-blast-2.13.0+/blastdb/nt'
+PATH=$PATH:/mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/bin
+export BLASTDB="/mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/blastdb"
+BLAST_DB='/mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/blastdb/nt'
 blast_output='/mnt/c/Users/mfisher5/Documents/EGC-Willapa-Bay/data/blast/run_2/hash_key_blast_2022-06-20.fasta'
 # BLAST PARAMETERS
 PERCENT_IDENTITY="85"

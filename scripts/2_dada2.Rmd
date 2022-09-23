@@ -88,6 +88,7 @@ if(marker=="Leray" | marker=="LerayXT"){
 read in file names.
 ```{r}
 fnFs <- sort(list.files(path=here(run_cutadapt_dir), pattern="_R1_001.fastq.fastq", full.names = TRUE))
+fnFs_simple <- str_remove(fnFs,pattern=paste0(here(run_cutadapt_dir),"/"))
 fnRs <- sort(list.files(path=here(run_cutadapt_dir), pattern="_R2_001.fastq.fastq", full.names = TRUE))
 ```
 <br>
@@ -98,10 +99,17 @@ get the sample names, which will be used to name the filtered files.
 prefix <- paste0("Locus_Leray_")
 suffix <- paste0("_L001_R1_001.fastq.fastq")
 sample.names.df <- (cutadapt.meta %>% dplyr::select(file1) %>%
-  mutate(sample_id=str_remove(file1,prefix)) %>%
-  mutate(sample_id=str_remove(sample_id,suffix)) %>%
-  separate(col=sample_id, into=c("sample_id","sample.num"), sep="_S")) %>% dplyr::select(sample_id)
+                      filter(file1 %in% fnFs_simple) %>%
+                    mutate(sample_id=str_remove(file1,prefix)) %>%
+                      mutate(sample_id=str_remove(sample_id,suffix)) %>%
+                      separate(col=sample_id, into=c("sample_id","sample.num"), sep="_S")) %>% dplyr::select(sample_id)
 sample.names <- as.character(sample.names.df$sample_id)
+```
+<br>
+
+remove any files from the cutadapt metadata that don't have corresponding files in the post-cutadapt folder (the indexes that weren't used in the run)
+```{r}
+cutadapt.meta.output <- filter(cutadapt.meta, file1 %in% fnFs_simple)
 ```
 <br>
 
@@ -154,7 +162,7 @@ trimming.length.r2 = 190
 - use `compress` to gzip the output fastqs
 
 ```{r}
-output.dada2 <- cutadapt.meta %>%
+output.dada2 <- cutadapt.meta.output %>%
   #filter(rc == 1) %>% # ONLY SELECT THE BACKWARDS ONES (1) OR FORWARDS ONES (0)
   mutate(basename=sample.names) %>%
   mutate(file1  = here(run_cutadapt_dir, file1),
@@ -179,9 +187,182 @@ output.dada2 <- cutadapt.meta %>%
                          .f = mergePairs ))
 
 if (keep.mid.files==TRUE){
-  write_rds(output.dada2, path = here(output.dir, "output.halfway.rds"))}
+  write_rds(output.dada2, path = here(outdir, "output.halfway.rds"))}
 ```
-<br> 
+Sample 1 - 47322 reads in 6107 unique sequences.
+Sample 1 - 56539 reads in 6514 unique sequences.
+Sample 1 - 42787 reads in 5796 unique sequences.
+Sample 1 - 2955 reads in 678 unique sequences.
+Sample 1 - 21639 reads in 3450 unique sequences.
+Sample 1 - 39462 reads in 6636 unique sequences.
+Sample 1 - 32785 reads in 5241 unique sequences.
+Sample 1 - 7343 reads in 1250 unique sequences.
+Sample 1 - 80448 reads in 9243 unique sequences.
+Sample 1 - 52938 reads in 6782 unique sequences.
+Sample 1 - 55470 reads in 7219 unique sequences.
+Sample 1 - 59316 reads in 8480 unique sequences.
+Sample 1 - 47387 reads in 5961 unique sequences.
+Sample 1 - 49340 reads in 6333 unique sequences.
+Sample 1 - 66974 reads in 7830 unique sequences.
+Sample 1 - 77763 reads in 9072 unique sequences.
+Sample 1 - 75288 reads in 7835 unique sequences.
+Sample 1 - 8856 reads in 1662 unique sequences.
+Sample 1 - 28209 reads in 4071 unique sequences.
+Sample 1 - 28209 reads in 4071 unique sequences.
+Sample 1 - 77151 reads in 9455 unique sequences.
+Sample 1 - 60239 reads in 7791 unique sequences.
+Sample 1 - 27111 reads in 3840 unique sequences.
+Sample 1 - 49528 reads in 6418 unique sequences.
+Sample 1 - 22568 reads in 3126 unique sequences.
+Sample 1 - 42494 reads in 5313 unique sequences.
+Sample 1 - 38430 reads in 3804 unique sequences.
+Sample 1 - 34507 reads in 3790 unique sequences.
+Sample 1 - 29734 reads in 3004 unique sequences.
+Sample 1 - 20389 reads in 3648 unique sequences.
+Sample 1 - 20875 reads in 3132 unique sequences.
+Sample 1 - 32785 reads in 4167 unique sequences.
+Sample 1 - 33177 reads in 4639 unique sequences.
+Sample 1 - 37389 reads in 4924 unique sequences.
+Sample 1 - 32951 reads in 4466 unique sequences.
+Sample 1 - 31931 reads in 4830 unique sequences.
+Sample 1 - 20076 reads in 3250 unique sequences.
+Sample 1 - 33514 reads in 4492 unique sequences.
+Sample 1 - 5973 reads in 909 unique sequences.
+Sample 1 - 3432 reads in 622 unique sequences.
+Sample 1 - 4541 reads in 778 unique sequences.
+Sample 1 - 27507 reads in 4515 unique sequences.
+Sample 1 - 24705 reads in 4456 unique sequences.
+Sample 1 - 16521 reads in 2614 unique sequences.
+Sample 1 - 37045 reads in 4948 unique sequences.
+Sample 1 - 36984 reads in 5185 unique sequences.
+Sample 1 - 49790 reads in 6446 unique sequences.
+Sample 1 - 8498 reads in 1397 unique sequences.
+Sample 1 - 7528 reads in 1399 unique sequences.
+Sample 1 - 12405 reads in 2160 unique sequences.
+Sample 1 - 51595 reads in 8557 unique sequences.
+Sample 1 - 36889 reads in 6569 unique sequences.
+Sample 1 - 34299 reads in 5918 unique sequences.
+Sample 1 - 778 reads in 564 unique sequences.
+Sample 1 - 396 reads in 324 unique sequences.
+Sample 1 - 430 reads in 363 unique sequences.
+Sample 1 - 22222 reads in 3492 unique sequences.
+Sample 1 - 25974 reads in 4056 unique sequences.
+Sample 1 - 37522 reads in 5766 unique sequences.
+Sample 1 - 5306 reads in 1183 unique sequences.
+Sample 1 - 12968 reads in 2267 unique sequences.
+Sample 1 - 21809 reads in 4437 unique sequences.
+Sample 1 - 9126 reads in 1653 unique sequences.
+Sample 1 - 1631 reads in 494 unique sequences.
+Sample 1 - 4361 reads in 938 unique sequences.
+Sample 1 - 30061 reads in 4657 unique sequences.
+Sample 1 - 13730 reads in 2617 unique sequences.
+Sample 1 - 7386 reads in 1423 unique sequences.
+Sample 1 - 8137 reads in 1369 unique sequences.
+Sample 1 - 16449 reads in 2069 unique sequences.
+Sample 1 - 26742 reads in 3178 unique sequences.
+Sample 1 - 33030 reads in 6538 unique sequences.
+Sample 1 - 48256 reads in 8625 unique sequences.
+Sample 1 - 40527 reads in 7162 unique sequences.
+Sample 1 - 29558 reads in 5514 unique sequences.
+Sample 1 - 44186 reads in 8339 unique sequences.
+Sample 1 - 60233 reads in 8914 unique sequences.
+Sample 1 - 46734 reads in 7600 unique sequences.
+Sample 1 - 27924 reads in 4713 unique sequences.
+Sample 1 - 28627 reads in 4835 unique sequences.
+Sample 1 - 29539 reads in 4565 unique sequences.
+Sample 1 - 23040 reads in 3629 unique sequences.
+Sample 1 - 42820 reads in 6623 unique sequences.
+Sample 1 - 35250 reads in 5148 unique sequences.
+Sample 1 - 24845 reads in 3202 unique sequences.
+Sample 1 - 11106 reads in 1886 unique sequences.
+Sample 1 - 17 reads in 14 unique sequences.
+Sample 1 - 47322 reads in 5146 unique sequences.
+Sample 1 - 56539 reads in 5479 unique sequences.
+Sample 1 - 42787 reads in 3998 unique sequences.
+Sample 1 - 2955 reads in 646 unique sequences.
+Sample 1 - 21639 reads in 2675 unique sequences.
+Sample 1 - 39462 reads in 4686 unique sequences.
+Sample 1 - 32785 reads in 4116 unique sequences.
+Sample 1 - 7343 reads in 1003 unique sequences.
+Sample 1 - 80448 reads in 8045 unique sequences.
+Sample 1 - 52938 reads in 4835 unique sequences.
+Sample 1 - 55470 reads in 5365 unique sequences.
+Sample 1 - 59316 reads in 5406 unique sequences.
+Sample 1 - 47387 reads in 5544 unique sequences.
+Sample 1 - 49340 reads in 4989 unique sequences.
+Sample 1 - 66974 reads in 6792 unique sequences.
+Sample 1 - 77763 reads in 6411 unique sequences.
+Sample 1 - 75288 reads in 6755 unique sequences.
+Sample 1 - 8856 reads in 1301 unique sequences.
+Sample 1 - 28209 reads in 2907 unique sequences.
+Sample 1 - 28209 reads in 2907 unique sequences.
+Sample 1 - 77151 reads in 6769 unique sequences.
+Sample 1 - 60239 reads in 5806 unique sequences.
+Sample 1 - 27111 reads in 2991 unique sequences.
+Sample 1 - 49528 reads in 4791 unique sequences.
+Sample 1 - 22568 reads in 2890 unique sequences.
+Sample 1 - 42494 reads in 3975 unique sequences.
+Sample 1 - 38430 reads in 3070 unique sequences.
+Sample 1 - 34507 reads in 2771 unique sequences.
+Sample 1 - 29734 reads in 2480 unique sequences.
+Sample 1 - 20389 reads in 2215 unique sequences.
+Sample 1 - 20875 reads in 2408 unique sequences.
+Sample 1 - 32785 reads in 3228 unique sequences.
+Sample 1 - 33177 reads in 3712 unique sequences.
+Sample 1 - 37389 reads in 3844 unique sequences.
+Sample 1 - 32951 reads in 3426 unique sequences.
+Sample 1 - 31931 reads in 3335 unique sequences.
+Sample 1 - 20076 reads in 2236 unique sequences.
+Sample 1 - 33514 reads in 3619 unique sequences.
+Sample 1 - 5973 reads in 770 unique sequences.
+Sample 1 - 3432 reads in 563 unique sequences.
+Sample 1 - 4541 reads in 658 unique sequences.
+Sample 1 - 27507 reads in 2853 unique sequences.
+Sample 1 - 24705 reads in 2409 unique sequences.
+Sample 1 - 16521 reads in 1964 unique sequences.
+Sample 1 - 37045 reads in 3738 unique sequences.
+Sample 1 - 36984 reads in 3966 unique sequences.
+Sample 1 - 49790 reads in 4870 unique sequences.
+Sample 1 - 8498 reads in 1265 unique sequences.
+Sample 1 - 7528 reads in 1094 unique sequences.
+Sample 1 - 12405 reads in 1680 unique sequences.
+Sample 1 - 51595 reads in 6416 unique sequences.
+Sample 1 - 36889 reads in 4636 unique sequences.
+Sample 1 - 34299 reads in 4277 unique sequences.
+Sample 1 - 778 reads in 398 unique sequences.
+Sample 1 - 396 reads in 208 unique sequences.
+Sample 1 - 430 reads in 236 unique sequences.
+Sample 1 - 22222 reads in 2684 unique sequences.
+Sample 1 - 25974 reads in 3104 unique sequences.
+Sample 1 - 37522 reads in 4251 unique sequences.
+Sample 1 - 5306 reads in 982 unique sequences.
+Sample 1 - 12968 reads in 1751 unique sequences.
+Sample 1 - 21809 reads in 2577 unique sequences.
+Sample 1 - 9126 reads in 1331 unique sequences.
+Sample 1 - 1631 reads in 398 unique sequences.
+Sample 1 - 4361 reads in 786 unique sequences.
+Sample 1 - 30061 reads in 2880 unique sequences.
+Sample 1 - 13730 reads in 1479 unique sequences.
+Sample 1 - 7386 reads in 1141 unique sequences.
+Sample 1 - 8137 reads in 1073 unique sequences.
+Sample 1 - 16449 reads in 1661 unique sequences.
+Sample 1 - 26742 reads in 2840 unique sequences.
+Sample 1 - 33030 reads in 4542 unique sequences.
+Sample 1 - 48256 reads in 6102 unique sequences.
+Sample 1 - 40527 reads in 5856 unique sequences.
+Sample 1 - 29558 reads in 3194 unique sequences.
+Sample 1 - 44186 reads in 4533 unique sequences.
+Sample 1 - 60233 reads in 6967 unique sequences.
+Sample 1 - 46734 reads in 6314 unique sequences.
+Sample 1 - 27924 reads in 4000 unique sequences.
+Sample 1 - 28627 reads in 3619 unique sequences.
+Sample 1 - 29539 reads in 3418 unique sequences.
+Sample 1 - 23040 reads in 2703 unique sequences.
+Sample 1 - 42820 reads in 4841 unique sequences.
+Sample 1 - 35250 reads in 4274 unique sequences.
+Sample 1 - 24845 reads in 2679 unique sequences.
+Sample 1 - 11106 reads in 2359 unique sequences.
+Sample 1 - 17 reads in 15 unique sequences.
 
 <br>
 
@@ -190,7 +371,7 @@ The sequence table is a matrix with rows corresponding to (and named by) the sam
 seqtab <- makeSequenceTable(output.dada2$mergers)
 dim(seqtab)
 ```
-86 | 4973
+87 | 540
 <br>
 
 Inspect distribution of sequence lengths:
@@ -203,7 +384,11 @@ table(nchar(getSequences(seqtab))) %>% as.data.frame() %>%
   ggplot( aes(x=Length,y=Freq)) +
   geom_col() + theme_bw()
 ```
-[saved to xlsx file]
+```{r}
+write.csv(table(nchar(getSequences(seqtab))) %>% as.data.frame() %>%
+  mutate(Length=as.character(Var1),
+         Length=as.numeric(Length)), file=here(outdir,'dada2_filtered_seqLengths.csv'))
+```
 <br>
 
 
@@ -215,23 +400,23 @@ dim(seqtab.nochim)
 
 seqtab.nochim.df <- as.data.frame(seqtab.nochim)
 ```
-Identified 2206 bimeras out of 5181 input sequences.
-86 | 2931
+Identified 114 bimeras out of 540 input sequences.
+[1]  87 | 426
 <br>
 
 ## Write output
 
 Copy the metadata so it is all in one place
 ```{r}
-cutadapt.meta %>% write_csv(here(output.dir,"dada2.metadata.csv"))
+cutadapt.meta.output %>% write_csv(here(outdir,"dada2.metadata.csv"))
 ```
 <br>
 
 Output file names
 ```{r}
-conv_file <- here(output.dir,"hash_key.csv")
-conv_file.fasta <- here(output.dir,"hash_key.fasta")
-ASV_file <-  here(output.dir,"ASV_table.csv")
+conv_file <- here(outdir,"hash_key.csv")
+conv_file.fasta <- here(outdir,"hash_key.fasta")
+ASV_file <-  here(outdir,"ASV_table.csv")
 ```
 <br>
 
@@ -249,7 +434,7 @@ if (hash==TRUE)
   write.fasta(sequences = as.list(conv_table$Sequence),
               names     = as.list(conv_table$Hash),
               file.out = conv_file.fasta)
-  seqtab.nochim.hashes.df <- bind_cols(cutadapt.meta %>%
+  seqtab.nochim.hashes.df <- bind_cols(cutadapt.meta.output %>%
                                          select(Sample_name, Locus),
                                        sample.names.df,
                                 seqtab.nochim.hashes.df)
@@ -297,12 +482,12 @@ qc.dat <- output.dada2 %>%
          merged = mergers,
          tabled,
          nonchim)
-write_csv(qc.dat, here(output.dir,"dada2_qc_summary.csv"))
+write_csv(qc.dat, here(outdir,"dada2_qc_summary.csv"))
 
 ## drop
-if (keep.mid.files==FALSE){
-  unlink(here(filt.dir), recursive = T)
-}
+# if (keep.mid.files==FALSE){
+#   unlink(here(filt.dir), recursive = T)
+# }
 ```
 <br>
 
@@ -317,7 +502,6 @@ qc.dat %>%
                              levels = c( "input","filtered","denoised_F" ,"denoised_R" , "merged" , "tabled", "nonchim"))) %>%
   ggplot(aes(x = Step, y = `Number of Sequences`, group =  Sample_name, color = Sample_name)) +
   geom_line() +
-  facet_wrap(~Sample_name) +
   guides(color = "none")
 ```
 ```{r eval=FALSE}
