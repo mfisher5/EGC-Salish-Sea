@@ -1,0 +1,280 @@
+---
+title: "Run 2 Sample Taxonomy Clean Up"
+author: "M Fisher"
+date: '2022-06-24'
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+# Description
+
+Clean up the taxonomic information for each crab (+technical replicate). This involves:
+
+1. Removing the ASVs in the positive and negative controls
+
+2. Removing predator DNA
+
+3. Removing non-target bacteria, fungal DNA
+
+4. Removing DNA from species too small to be targeted prey, e.g., copepods, etc.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(ggplot2)
+library(ggrepel)
+```
+
+Specify user directories
+```{r}
+dada_dir    <- 'data/dada2'
+blast_dir   <- 'data/blast'
+outdir      <- 'data'
+```
+<br>
+
+What are the names of the processed blast file with taxonomy from script 6?
+```{r}
+# hashes with unique staxids
+blast_file <- 'leray_r2_sample_blast_lca_taxonomy.csv'
+```
+<br>
+
+What is the location / name of the metadata file for this sequencing run?
+```{r echo=FALSE}
+# create nice metadata file
+cutadapt.meta <- read_csv(here("data/cutadapt/noprimers", "output.metadata.csv"))
+fnFs <- sort(list.files(path=here("data/cutadapt/noprimers"), pattern="_R1_001.fastq.fastq", full.names = TRUE))
+fnFs_simple <- str_remove(fnFs,pattern=paste0(here::here(),"/data/cutadapt/noprimers/"))
+clean.meta <- cutadapt.meta %>% dplyr::select(Locus,file1) %>%
+                      filter(file1 %in% fnFs_simple) %>%
+                    mutate(sample_id=str_remove(file1,"Locus_Leray_")) %>%
+                      mutate(sample_id=str_remove(sample_id,"_L001_R1_001.fastq.fastq")) %>%
+                      separate(col=sample_id, into=c("sample_label","sample_name"), sep="_S") %>%
+  mutate(site=ifelse(grepl("SS20",sample_label), "Drayton Harbor",
+                     ifelse(grepl("Control",sample_label),"NA","Dungeness Spit"))) %>%
+  mutate(sample_type=ifelse(grepl("V",sample_label), "vial",
+                            ifelse(grepl("Control",sample_label),"NA","whole crab"))) %>%
+  dplyr::select(sample_name, sample_label, Locus, site, sample_type, file1)
+write.csv(clean.meta,here('data','EGC_WASS_Run2_samples.csv'), row.names=FALSE)
+
+```
+```{r}
+run_metadat_file <- 'data/EGC_WASS_Run2_samples.csv'
+```
+<br>
+
+And the run number and the marker
+```{r}
+run.num <- 2
+marker <-'leray' 
+```
+<br>
+
+# Read in data
+
+```{r read in asvs1, include=FALSE}
+blast.dat <- read_csv(here(blast_dir, blast_file))
+metadat <- read_csv(here(run_metadat_file))
+```
+<br>
+
+Clean up the blast data, separate the sample-rep into a sample ID and replicate number, and then join to metadata information.
+```{r}
+blast.dat.filter <- blast.dat %>%
+  dplyr::select(1:14) %>%
+  mutate(type=ifelse(grepl("Positive", sample_id) | grepl("Negative",sample_id), "Control","Sample")) %>%
+  separate(col=sample_id, into=c("sample","tech"), sep=-1,remove=FALSE) %>%
+  mutate(tech=as.numeric(as.factor(tolower(tech)))) %>%
+  mutate(sample=ifelse(type=="Sample",str_sub(sample,start=1,end=-2),sample),
+         tech=ifelse(type=="Sample",tech,NA))
+
+blast.dat.filter <- left_join(blast.dat.filter, metadat,by=c("Sample_name"="sample_name","sample_id"="sample_label","Locus")) %>% dplyr::select(-file1)
+dim(blast.dat.filter)
+```
+<br>
+<br>
+
+# Identify Taxonomy for Removal
+
+To easier track how much data is being removed, I'm going to classify each hash as (1) to remove, and (2) reason for removal. then in the next section, I'll filter the data and check out the prey taxa. 
+
+### Controls
+
+get the hashes in the controls.
+```{r echo=FALSE, fig.height=3, fig.width=8}
+control_dat <- blast.dat.filter %>% filter(type=="Control")
+ggplot(data=control_dat, aes(x=sample_id, y=nReads, fill=taxon)) +
+  geom_col() +
+  facet_wrap(~sample_id, scales="free_y", ) +
+  theme_bw() + ggtitle("Controls - Taxa") + theme(axis.text.x=element_blank(),axis.title.x=element_blank())
+```
+<br>
+```{r echo=FALSE}
+control_dat <- blast.dat.filter %>% filter(type=="Control" | taxon %in% c("Homo sapiens","Primates"))
+```
+<br>
+
+mark in the rest of the data. there was also some human DNA (oops!) that needs to be removed, which I've included in the 'control' category.
+```{r}
+blast.dat.filter <- blast.dat.filter %>% 
+  filter(type=="Sample") %>%
+  mutate(control_rm=ifelse(Hash %in% control_dat$Hash,1,0))
+```
+<br>
+
+
+### Predator DNA
+
+Any Green crab DNA will be marked as 'predator' DNA and removed. 
+
+- Carcinus maenas (species)
+- Carcinus (genus)
+<br>
+
+```{r}
+blast.dat.filter <- blast.dat.filter %>% 
+  mutate(predator_rm=ifelse(control_rm==0 & (taxon =="Carcinus maenas" | taxon =="Carcinus aestuarii" | taxon =="Carcinus"), 1, 0))
+```
+<br>
+<br>
+
+### Bacterial, fungal etc. DNA
+
+The data has the following phylums; and when phylum is missing, these are the classes :
+```{r echo=FALSE}
+unique(blast.dat.filter$phylum)
+unique(filter(blast.dat.filter, is.na(phylum))$class)
+```
+<br>
+
+There is also one genus of protists, and a genus of amoebas (not shown above).
+
+These are the bacterial / fungal / amoeba / protist taxa to remove: 
+```{r}
+to_remove_phyla <- c("Proteobacteria","Planctomycetes","Oomycota","Actinobacteria","Basidiomycota","Ascomycota","Discosea","Evosea","Bacteroidetes")
+to_remove_taxa <- c("Choanoflagellata")
+
+blast.dat.filter <- blast.dat.filter %>% 
+  mutate(baf_rm=ifelse(control_rm==0 & (phylum %in% to_remove_phyla | taxon %in% to_remove_taxa), 1, 0))
+``` 
+<br>
+<br>
+
+### Unlikely prey
+
+Some items that left behind DNA in the crab stomach are unlikely to be targeted prey -- they could have been ingested while the crab was eating something else, or they could have been in the stomach of the crab's prey. 
+
+I'm going to assume that the following are not targeted by the crab as prey: 
+
+- diatoms (Bacillariophyta)
+- rotifers (Rotifera)
+- small algae & plankton
+
+Here are the algae / plant taxa:
+```{r echo=FALSE}
+print(blast.dat.filter %>% filter(phylum %in% c("Rhodophyta","Chlorophyta","Streptophyta","Bacillariophyta","Rotifera") | class %in% c("Phaeophyceae","Chrysophyceae")) %>% dplyr::select(phylum, class, order, taxon) %>% distinct())
+```
+<br>
+
+From that list, I'm going to remove the following:
+```{r}
+to_remove_phyla <- c("Bacillariophyta", "Rotifera")
+to_remove_taxa  <- c("Cymbomonas tetramitiformis","Micromonas pusilla","Planosiphon gracilis")
+
+blast.dat.filter <- blast.dat.filter %>% 
+  mutate(too_small_rm=ifelse(control_rm==0 & (phylum %in% to_remove_phyla | taxon %in% to_remove_taxa), 1, 0))
+```
+<br>
+
+There are probably a range of other organisms that are not target prey, but I'm going to leave everything else in for now until I have a crab biologist weigh in. 
+<br>
+
+
+## Summary
+
+Look at the proportion of reads in each 'removal' category, for each sample.
+```{r echo=FALSE}
+summary_dat <- blast.dat.filter %>%
+  mutate(missing_rm=ifelse(is.na(rank) & is.na(taxon), 1,0))%>%
+  mutate(retained=ifelse(missing_rm==0 & control_rm==0 & predator_rm==0 & baf_rm==0 & too_small_rm==0, 1,0)) %>%
+  pivot_longer(cols=c(missing_rm, control_rm,predator_rm,baf_rm,too_small_rm,retained), names_to="reason") %>%
+  mutate(reason=ifelse(reason=="missing_rm","missing",ifelse(reason=="control_rm","in control",
+                                                             ifelse(reason=="predator_rm","predator DNA",
+                                                                    ifelse(reason=="baf_rm","non-target DNA",
+                                                                           ifelse(reason=="too_small_rm","incidental ingestion",ifelse(reason=="retained","retained",NA))))))) %>%
+  filter(value==1) %>%
+  dplyr::select(sample_id,sample,tech,site,sample_type,Hash,nReads,reason,rank,taxon)
+
+total_reads_per_sample <- blast.dat.filter %>%
+  group_by(sample_id) %>%
+  summarise(total_reads=sum(nReads), .groups="drop")
+
+plotdat <- summary_dat %>%
+  left_join(total_reads_per_sample,by="sample_id") %>%
+  group_by(sample_id,site,sample_type,reason) %>%
+  summarise(pReads=nReads/total_reads, .groups="drop")
+
+write.csv(summary_dat,here('data','blast','leray_r2_sample_blast_taxonomy_processed.csv'))
+```
+<br>
+
+Overall summary, by site: 
+```{r fig.width=10,fig.height=6}
+ggplot(plotdat, aes(x=sample_id,y=pReads,fill=reason)) +
+  geom_col() +
+  facet_grid(cols=vars(site), scales="free") +
+  xlab("crab + technical replicate") +
+  theme_bw() + theme(axis.text.x=element_blank(), legend.title=element_blank())
+```
+<br>
+
+By sample type:
+```{r echo=FALSE, fig.height=5, fig.width=8}
+ggplot(plotdat, aes(x=sample_id,y=pReads,fill=reason)) +
+  geom_col() +
+  facet_grid(cols=vars(site), , rows=vars(sample_type),scales="free") +
+  xlab("crab + technical replicate") +
+  theme_bw() + theme(axis.text.x=element_blank(), legend.title=element_blank())
+```
+<br>
+
+whew. how many crab have data from actual potential prey??
+```{r}
+length(unique(summary_dat$sample))
+length((summary_dat %>% group_by(sample,reason) %>% summarise(sum(nReads)) %>% filter(reason=="retained"))$sample)
+```
+<br>
+
+yikes. only 17 out of 28 crab. 
+<br>
+
+
+# Write out Taxonomy
+
+remove all of the hashes marked for removal above. 
+```{r}
+blast.dat.out <- blast.dat.filter %>%
+  filter(!is.na(rank)) %>%
+  filter(control_rm==0 & predator_rm==0 & baf_rm==0 & too_small_rm==0) %>%
+  dplyr::select(-c(control_rm,predator_rm,baf_rm,too_small_rm))
+```
+<br>
+
+write out. 
+```{r}
+write_csv(blast.dat.out, here(outdir, paste0(marker,"_r",run.num,"_blast_taxonomy_filtered.csv")))
+```
+<br>
+
+
+
+
+
+
+
+
