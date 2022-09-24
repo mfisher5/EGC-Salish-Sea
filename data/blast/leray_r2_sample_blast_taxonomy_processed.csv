@@ -7,7 +7,7 @@
 "6","SS18-059-a","SS18-059",1,"Dungeness Spit","whole crab","dd39321bcb93467e907816e5139b76f32d9143f1",9,"predator DNA","species","Carcinus maenas"
 "7","SS18-059-a","SS18-059",1,"Dungeness Spit","whole crab","028bff6f7fbcf62ca2c60d52f2a20fc0b507ca26",64,"non-target DNA","class","Sordariomycetes"
 "8","SS18-059-a","SS18-059",1,"Dungeness Spit","whole crab","13a4c8c20eaab7ae0cab26ff46b2ab39a4f40a5a",45,"predator DNA","species","Carcinus maenas"
-"9","SS18-059-a","SS18-059",1,"Dungeness Spit","whole crab","71925db1484cbc7f06cf8024a60a1bd3201632f3",34,"retained","species","Monosiga brevicollis"
+"9","SS18-059-a","SS18-059",1,"Dungeness Spit","whole crab","71925db1484cbc7f06cf8024a60a1bd3201632f3",34,"non-target DNA","species","Monosiga brevicollis"
 "10","SS18-059-a","SS18-059",1,"Dungeness Spit","whole crab","850ab1e4fcb1124727a4820b5c18ca6edb1e1452",11,"non-target DNA","phylum","Oomycota"
 "11","SS18-059-a","SS18-059",1,"Dungeness Spit","whole crab","a202210af4102bfb37ce9d4e2d600dd6eb3205fa",2,"missing",NA,NA
 "12","SS18-059-b","SS18-059",2,"Dungeness Spit","whole crab","538d38a10b39504ac841b298f510440aec3e5c27",56145,"predator DNA","species","Carcinus maenas"
@@ -20,7 +20,7 @@
 "19","SS18-059-c","SS18-059",3,"Dungeness Spit","whole crab","66baf62fa9d82254a050652e2c3e4147b20cef31",29,"predator DNA","species","Carcinus maenas"
 "20","SS18-059-c","SS18-059",3,"Dungeness Spit","whole crab","f80c71e33339c6a16bcce1ad39d1f7b6e83419b2",13,"missing",NA,NA
 "21","SS18-059-c","SS18-059",3,"Dungeness Spit","whole crab","dd39321bcb93467e907816e5139b76f32d9143f1",11,"predator DNA","species","Carcinus maenas"
-"22","SS18-059-c","SS18-059",3,"Dungeness Spit","whole crab","93b1a402f944324962d7a939035eb04753ead8b7",10,"retained","species","Homo sapiens"
+"22","SS18-059-c","SS18-059",3,"Dungeness Spit","whole crab","93b1a402f944324962d7a939035eb04753ead8b7",10,"in control","species","Homo sapiens"
 "23","SS18-059-c","SS18-059",3,"Dungeness Spit","whole crab","f0ac20495fe6719db397e97f38b6074e2dc44d69",18,"non-target DNA","order","Hypocreales"
 "24","SS19-064-a","SS19-064",1,"Dungeness Spit","whole crab","538d38a10b39504ac841b298f510440aec3e5c27",2914,"predator DNA","species","Carcinus maenas"
 "25","SS19-064-a","SS19-064",1,"Dungeness Spit","whole crab","06728f574aa876531056d77ac7b6b0ecad14336a",4,"missing",NA,NA
@@ -100,7 +100,7 @@
 "99","SS20-333-c","SS20-333",3,"Drayton Harbor","whole crab","3f1671b7d03c1bfedbb50c3f0045779d533be5b1",7,"missing",NA,NA
 "100","SS20-333-c","SS20-333",3,"Drayton Harbor","whole crab","10a4b964c9580505fefc14331d08b4e3a4f7d473",3,"non-target DNA","species","Korotnevella stella"
 "101","SS19-087-a","SS19-087",1,"Dungeness Spit","whole crab","538d38a10b39504ac841b298f510440aec3e5c27",56283,"predator DNA","species","Carcinus maenas"
-"102","SS19-087-a","SS19-087",1,"Dungeness Spit","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",13,"retained","species","Hematodinium sp."
+"102","SS19-087-a","SS19-087",1,"Dungeness Spit","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",13,"non-target DNA","species","Hematodinium sp."
 "103","SS19-087-a","SS19-087",1,"Dungeness Spit","whole crab","033639e5010e9069ffb163478b59bf12b33b041a",34,"predator DNA","species","Carcinus maenas"
 "104","SS19-087-a","SS19-087",1,"Dungeness Spit","whole crab","d21f2675ef2ef67dd92b1c5da1e1d7ceab52e8da",230,"missing",NA,NA
 "105","SS19-087-a","SS19-087",1,"Dungeness Spit","whole crab","66baf62fa9d82254a050652e2c3e4147b20cef31",176,"predator DNA","species","Carcinus maenas"
@@ -137,7 +137,7 @@
 "136","SS19-087-a","SS19-087",1,"Dungeness Spit","whole crab","3a35a4d8103237a00e65f08148adef71dfb6710e",3,"missing",NA,NA
 "137","SS19-087-a","SS19-087",1,"Dungeness Spit","whole crab","7aae4e61e3610a0b6406210d565a8c18058cf49e",3,"non-target DNA","species","Cellulophaga lytica"
 "138","SS19-087-b","SS19-087",2,"Dungeness Spit","whole crab","538d38a10b39504ac841b298f510440aec3e5c27",44486,"predator DNA","species","Carcinus maenas"
-"139","SS19-087-b","SS19-087",2,"Dungeness Spit","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",19,"retained","species","Hematodinium sp."
+"139","SS19-087-b","SS19-087",2,"Dungeness Spit","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",19,"non-target DNA","species","Hematodinium sp."
 "140","SS19-087-b","SS19-087",2,"Dungeness Spit","whole crab","88808c212aba563b539504c1d48c871cf7faa9bd",209,"predator DNA","species","Carcinus maenas"
 "141","SS19-087-b","SS19-087",2,"Dungeness Spit","whole crab","245984f52208cb4e1405e89d21f4273c723f23e5",42,"predator DNA","species","Carcinus maenas"
 "142","SS19-087-b","SS19-087",2,"Dungeness Spit","whole crab","66baf62fa9d82254a050652e2c3e4147b20cef31",89,"predator DNA","species","Carcinus maenas"
@@ -174,7 +174,7 @@
 "173","SS19-087-b","SS19-087",2,"Dungeness Spit","whole crab","7e78d1b07fb7c1ed7f9ecfa29f4380b845c768b5",5,"missing",NA,NA
 "174","SS19-087-b","SS19-087",2,"Dungeness Spit","whole crab","353d1e1bd588c1527fbb77f717618edbf8c05728",5,"non-target DNA","family","Flavobacteriaceae"
 "175","SS19-087-c","SS19-087",3,"Dungeness Spit","whole crab","538d38a10b39504ac841b298f510440aec3e5c27",47012,"predator DNA","species","Carcinus maenas"
-"176","SS19-087-c","SS19-087",3,"Dungeness Spit","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",52,"retained","species","Hematodinium sp."
+"176","SS19-087-c","SS19-087",3,"Dungeness Spit","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",52,"non-target DNA","species","Hematodinium sp."
 "177","SS19-087-c","SS19-087",3,"Dungeness Spit","whole crab","88808c212aba563b539504c1d48c871cf7faa9bd",18,"predator DNA","species","Carcinus maenas"
 "178","SS19-087-c","SS19-087",3,"Dungeness Spit","whole crab","245984f52208cb4e1405e89d21f4273c723f23e5",49,"predator DNA","species","Carcinus maenas"
 "179","SS19-087-c","SS19-087",3,"Dungeness Spit","whole crab","66c41fda7d8fc5fc8e39b178faafad1d1d0e5808",244,"incidental ingestion","species","Paralia sulcata"
@@ -278,7 +278,7 @@
 "277","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","1f4036645d70c3c54f417336049ac551798a6d3b",39,"missing",NA,NA
 "278","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","20fa9d587f49f79501397033d8767588ca6623ba",15,"retained","genus","Ectocarpus"
 "279","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","e6fd346fbf7ad638f5d4e639d438226cfb646f9b",36,"missing",NA,NA
-"280","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","93b1a402f944324962d7a939035eb04753ead8b7",6,"retained","species","Homo sapiens"
+"280","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","93b1a402f944324962d7a939035eb04753ead8b7",6,"in control","species","Homo sapiens"
 "281","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","e2407be75574de21a680c845c17c1f9ad790433f",9,"missing",NA,NA
 "282","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","995e16315ad1487b191eda66a3e1c8a26c6a16f9",7,"missing",NA,NA
 "283","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","1bb402ceb27509e2ee65df86f17055bc109d373d",4,"missing",NA,NA
@@ -287,7 +287,7 @@
 "286","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","1f4036645d70c3c54f417336049ac551798a6d3b",39,"missing",NA,NA
 "287","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","20fa9d587f49f79501397033d8767588ca6623ba",15,"retained","genus","Ectocarpus"
 "288","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","e6fd346fbf7ad638f5d4e639d438226cfb646f9b",36,"missing",NA,NA
-"289","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","93b1a402f944324962d7a939035eb04753ead8b7",6,"retained","species","Homo sapiens"
+"289","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","93b1a402f944324962d7a939035eb04753ead8b7",6,"in control","species","Homo sapiens"
 "290","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","e2407be75574de21a680c845c17c1f9ad790433f",9,"missing",NA,NA
 "291","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","995e16315ad1487b191eda66a3e1c8a26c6a16f9",7,"missing",NA,NA
 "292","SS20-350-b","SS20-350",2,"Drayton Harbor","whole crab","1bb402ceb27509e2ee65df86f17055bc109d373d",4,"missing",NA,NA
@@ -326,7 +326,7 @@
 "325","SS18-066V-b","SS18-066V",2,"Dungeness Spit","vial","0c6ee8700c3358420b5f14c913f47c57e8f51079",474,"predator DNA","species","Carcinus maenas"
 "326","SS18-066V-b","SS18-066V",2,"Dungeness Spit","vial","f5951eb6aecb5c3e55a94462bdd5503e6ce0421c",29,"predator DNA","species","Carcinus maenas"
 "327","SS18-066V-b","SS18-066V",2,"Dungeness Spit","vial","34cd94cd95146397b1b32cce230da8a5a252d4a1",52,"incidental ingestion","species","Euchlanis dilatata"
-"328","SS18-066V-b","SS18-066V",2,"Dungeness Spit","vial","de7f16dd996f87deba7cbc148b8dff23d88d2c51",2,"retained","genus","Naegleria"
+"328","SS18-066V-b","SS18-066V",2,"Dungeness Spit","vial","de7f16dd996f87deba7cbc148b8dff23d88d2c51",2,"non-target DNA","genus","Naegleria"
 "329","SS19-059-a","SS19-059",1,"Dungeness Spit","whole crab","538d38a10b39504ac841b298f510440aec3e5c27",49099,"predator DNA","species","Carcinus maenas"
 "330","SS19-059-a","SS19-059",1,"Dungeness Spit","whole crab","88808c212aba563b539504c1d48c871cf7faa9bd",134,"predator DNA","species","Carcinus maenas"
 "331","SS19-059-a","SS19-059",1,"Dungeness Spit","whole crab","245984f52208cb4e1405e89d21f4273c723f23e5",20,"predator DNA","species","Carcinus maenas"
@@ -380,13 +380,13 @@
 "379","SS20-191-a","SS20-191",1,"Drayton Harbor","whole crab","af16bf2f97c583b1ded277f88daace8aa697e979",39,"missing",NA,NA
 "380","SS20-191-a","SS20-191",1,"Drayton Harbor","whole crab","dd39321bcb93467e907816e5139b76f32d9143f1",4,"predator DNA","species","Carcinus maenas"
 "381","SS20-191-a","SS20-191",1,"Drayton Harbor","whole crab","ca281d845bf44275d58a54d46698e606853a293e",29,"retained","species","Promesostoma dipterostylum"
-"382","SS20-191-a","SS20-191",1,"Drayton Harbor","whole crab","f4010b4734e13f3f9c722d154618fab6d4151b65",7,"retained","order","Euamoebida"
+"382","SS20-191-a","SS20-191",1,"Drayton Harbor","whole crab","f4010b4734e13f3f9c722d154618fab6d4151b65",7,"non-target DNA","order","Euamoebida"
 "383","SS20-191-b","SS20-191",2,"Drayton Harbor","whole crab","538d38a10b39504ac841b298f510440aec3e5c27",37263,"predator DNA","species","Carcinus maenas"
 "384","SS20-191-b","SS20-191",2,"Drayton Harbor","whole crab","245984f52208cb4e1405e89d21f4273c723f23e5",19,"predator DNA","species","Carcinus maenas"
 "385","SS20-191-b","SS20-191",2,"Drayton Harbor","whole crab","66baf62fa9d82254a050652e2c3e4147b20cef31",33,"predator DNA","species","Carcinus maenas"
 "386","SS20-191-b","SS20-191",2,"Drayton Harbor","whole crab","af16bf2f97c583b1ded277f88daace8aa697e979",17,"missing",NA,NA
 "387","SS20-191-b","SS20-191",2,"Drayton Harbor","whole crab","dd39321bcb93467e907816e5139b76f32d9143f1",3,"predator DNA","species","Carcinus maenas"
-"388","SS20-191-b","SS20-191",2,"Drayton Harbor","whole crab","93b1a402f944324962d7a939035eb04753ead8b7",19,"retained","species","Homo sapiens"
+"388","SS20-191-b","SS20-191",2,"Drayton Harbor","whole crab","93b1a402f944324962d7a939035eb04753ead8b7",19,"in control","species","Homo sapiens"
 "389","SS20-191-b","SS20-191",2,"Drayton Harbor","whole crab","8a65cb2ccd9672e670446558379b7aab2ede78d2",16,"incidental ingestion","species","Euchlanis dilatata"
 "390","SS20-191-b","SS20-191",2,"Drayton Harbor","whole crab","5269779039a6ba7fbac326fec2b62bed8d87cfe4",12,"missing",NA,NA
 "391","SS20-191-c","SS20-191",3,"Drayton Harbor","whole crab","538d38a10b39504ac841b298f510440aec3e5c27",32877,"predator DNA","species","Carcinus maenas"
@@ -470,7 +470,7 @@
 "469","SS20-216-b","SS20-216",2,"Drayton Harbor","whole crab","ffa9af3c2e6fcacb587d5aa3b7b6b27b726ffdfb",5,"retained","species","Cymatogaster aggregata"
 "470","SS20-216-b","SS20-216",2,"Drayton Harbor","whole crab","23d5badbb5df54d48f2da2bbf447101b6ff4c0b9",5,"retained","family","Naididae"
 "471","SS20-216-c","SS20-216",3,"Drayton Harbor","whole crab","538d38a10b39504ac841b298f510440aec3e5c27",11987,"predator DNA","species","Carcinus maenas"
-"472","SS20-216-c","SS20-216",3,"Drayton Harbor","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",5,"retained","species","Hematodinium sp."
+"472","SS20-216-c","SS20-216",3,"Drayton Harbor","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",5,"non-target DNA","species","Hematodinium sp."
 "473","SS20-216-c","SS20-216",3,"Drayton Harbor","whole crab","033639e5010e9069ffb163478b59bf12b33b041a",112,"predator DNA","species","Carcinus maenas"
 "474","SS20-216-c","SS20-216",3,"Drayton Harbor","whole crab","69f6c969160e30013383c61f617588c919753b77",196,"missing",NA,NA
 "475","SS20-216-c","SS20-216",3,"Drayton Harbor","whole crab","dd39321bcb93467e907816e5139b76f32d9143f1",6,"predator DNA","species","Carcinus maenas"
@@ -488,12 +488,12 @@
 "487","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","96ef70c6fca74e85e26f2f4e700a0b0d042939b8",62,"predator DNA","species","Carcinus maenas"
 "488","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","3d17e6bd4ace8ab34bce189e8dbdba9c9f5859ed",345,"retained","species","Kurtiella bidentata"
 "489","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","95a159a1591f407043ad5dffc5897489728d8111",38,"missing",NA,NA
-"490","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","b7ce278a1cdbfcb859c1d55b4c8d54fcb8b22d12",74,"retained","class","Dinophyceae"
+"490","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","b7ce278a1cdbfcb859c1d55b4c8d54fcb8b22d12",74,"non-target DNA","class","Dinophyceae"
 "491","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","6a99fd58804dc91e9e2b837431362741c8708900",51,"non-target DNA","class","Dothideomycetes"
 "492","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","0cf5d9d9c99cd0d110c59e29d0c921fd3d086000",209,"predator DNA","species","Carcinus maenas"
 "493","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","f8369a552f325816430945aa3dfd9a5d8673d539",78,"retained","order","Leptothecata"
 "494","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","afa10c03beb826e2d95e8df0243f6c29ff4ae6f5",102,"incidental ingestion","phylum","Bacillariophyta"
-"495","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","701de5496b24ad78edb3fb8d54d294fb325285af",65,"retained","class","Dinophyceae"
+"495","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","701de5496b24ad78edb3fb8d54d294fb325285af",65,"non-target DNA","class","Dinophyceae"
 "496","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","88523604f2abc88803c30d35f591b7a87383f12f",76,"missing",NA,NA
 "497","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","dd39321bcb93467e907816e5139b76f32d9143f1",8,"predator DNA","species","Carcinus maenas"
 "498","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","8d197bd15722a2601613aa8b9ddbfa647da50af7",74,"missing",NA,NA
@@ -502,7 +502,7 @@
 "501","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","de976abdf62c50f1482a7d49e2f4787e7a4c4a15",114,"retained","species","Ampithoe valida"
 "502","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","3aa2daf73b89f140751dc0ee403d632bcf6c1729",37,"missing",NA,NA
 "503","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","ec5a962f4dbb921aa915a11c6ebf57f86e8ef20a",94,"non-target DNA","order","Hypocreales"
-"504","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","ae10af5cfba10a098e86c4d7db7aa170671c1a8a",28,"retained","species","Heterocapsa rotundata"
+"504","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","ae10af5cfba10a098e86c4d7db7aa170671c1a8a",28,"non-target DNA","species","Heterocapsa rotundata"
 "505","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","ca0c6c77a396bfa80b2ff044eb300cdc6cfe46d8",84,"retained","species","Mytilus trossulus"
 "506","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","93f5711a67d6365310d4b30f2243e3d84dc17088",78,"missing",NA,NA
 "507","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","4db7fc5cafa31f3cd393e04977faead7e2eec40e",24,"incidental ingestion","species","Cymbomonas tetramitiformis"
@@ -510,17 +510,17 @@
 "509","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","8c965c7c938c0766ad9f4a472aba42a3cb0a6923",65,"missing",NA,NA
 "510","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","b577a7c91428ab2bffeeb9f28e1bc4681ad23b33",57,"missing",NA,NA
 "511","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","2c81228ab39b514525d474ad21fc7bff12663b9f",60,"non-target DNA","class","Leotiomycetes"
-"512","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","49f3860c3bfcdf72fae55203367fb01a5a27ca53",51,"retained","species","Heterocapsa rotundata"
-"513","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","93b1a402f944324962d7a939035eb04753ead8b7",16,"retained","species","Homo sapiens"
+"512","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","49f3860c3bfcdf72fae55203367fb01a5a27ca53",51,"non-target DNA","species","Heterocapsa rotundata"
+"513","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","93b1a402f944324962d7a939035eb04753ead8b7",16,"in control","species","Homo sapiens"
 "514","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","ce96320f1d922690f947f3171b6e7366c3d8492f",37,"non-target DNA","phylum","Ascomycota"
-"515","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","584f26da756c0bf2ae5d8098bc10cc12569937c5",16,"retained","class","Dinophyceae"
+"515","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","584f26da756c0bf2ae5d8098bc10cc12569937c5",16,"non-target DNA","class","Dinophyceae"
 "516","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","22b7a5a3da3dd070c55afe21fb442448d6fa2905",42,"missing",NA,NA
 "517","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","1a0f1937e47c3b1005fdea97d2af450c374f4c41",39,"missing",NA,NA
 "518","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","2f4023ac4a77e70a3a3885e6fcb30af0d77f1921",8,"missing",NA,NA
 "519","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","bdbe960e4273c14243ea32eebc40ba40fa6a2824",28,"incidental ingestion","class","Coscinodiscophyceae"
 "520","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","3c63055b99601b92ff182d1db81fbc9d6875bb79",36,"missing",NA,NA
 "521","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","fbc80478e4ab303809c6afd6f703d1b6d0488088",9,"non-target DNA","family","Sporidiobolaceae"
-"522","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","255710ad982a8de0248b9d903d51aca64fb8e807",13,"retained","order","Suessiales"
+"522","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","255710ad982a8de0248b9d903d51aca64fb8e807",13,"non-target DNA","order","Suessiales"
 "523","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","0ce74050b15681edee10bddb3025bd8cb6702457",6,"missing",NA,NA
 "524","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","34b6f9eccb1f3dd653c2ba0e4f95d63b2f0f8a2d",14,"missing",NA,NA
 "525","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","f5ae768086e009bac68ef33e204d983eab75fd21",21,"missing",NA,NA
@@ -547,10 +547,10 @@
 "546","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","aa2a9c997aaa82a8672905b6c74803756deaaf24",9,"missing",NA,NA
 "547","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","f53c2637565fd8ae29f78fd18a0da54803327fdf",9,"missing",NA,NA
 "548","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","9891a5cbd3795e4d0c3d8b0b484c1bf4f5770aae",9,"missing",NA,NA
-"549","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","694733e6ede05652fba82bc26dc08641f23266cc",5,"retained","species","Heterocapsa triquetra"
+"549","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","694733e6ede05652fba82bc26dc08641f23266cc",5,"non-target DNA","species","Heterocapsa triquetra"
 "550","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","a3f4654d03aed5d5c33a0ef9287bae7e61107e2d",7,"missing",NA,NA
-"551","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","3a7e89136e33e077e4b439c4e2f2bc5021cb5a2e",7,"retained","genus","Scrippsiella"
-"552","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","3a7e89136e33e077e4b439c4e2f2bc5021cb5a2e",7,"retained","genus","Scrippsiella"
+"551","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","3a7e89136e33e077e4b439c4e2f2bc5021cb5a2e",7,"non-target DNA","genus","Scrippsiella"
+"552","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","3a7e89136e33e077e4b439c4e2f2bc5021cb5a2e",7,"non-target DNA","genus","Scrippsiella"
 "553","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","d2817d425643f567923ce3069ef6b4c9bf7e4919",6,"missing",NA,NA
 "554","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","3c4ae5aab53418db9bc1118a254bcf1c675a52c4",6,"non-target DNA","genus","Phytophthora"
 "555","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","0a7981118e0a3b8c876ee18c07a600510eb24d2f",6,"missing",NA,NA
@@ -559,21 +559,21 @@
 "558","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","60546371a257246dc923f7bc1e3701710769edf6",6,"non-target DNA","genus","Penicillium"
 "559","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","5c00ba4faac2796bf09af3c7916941a279c7917f",5,"retained","species","Thysanoessa raschii"
 "560","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","55d999878a0373819c6e088ae6ed35670cd0f5d1",5,"missing",NA,NA
-"561","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","d37822cb46e054ecff1207c3bf6c1787b2d9175b",5,"retained","class","Dinophyceae"
+"561","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","d37822cb46e054ecff1207c3bf6c1787b2d9175b",5,"non-target DNA","class","Dinophyceae"
 "562","SS20-330k-a","SS20-330k",1,"Drayton Harbor","whole crab","4886c74720bc1ef259c017a5361f8ef88a84f19d",3,"missing",NA,NA
 "563","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","538d38a10b39504ac841b298f510440aec3e5c27",34221,"predator DNA","species","Carcinus maenas"
 "564","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","d8c208421141d5ffd5055922ef0bb2ea43bceb51",97,"retained","species","Batillaria attramentaria"
-"565","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",4,"retained","species","Hematodinium sp."
+"565","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",4,"non-target DNA","species","Hematodinium sp."
 "566","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","88808c212aba563b539504c1d48c871cf7faa9bd",26,"predator DNA","species","Carcinus maenas"
 "567","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","314ed3efab1a4445db27864bd89610f7cd52e1ca",799,"missing",NA,NA
 "568","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","ad7c17f622104dcaa57c76757dac23063387c073",17,"predator DNA","species","Carcinus maenas"
 "569","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","97f80d7f6b6358d8650fa3e83fd2365206cec710",177,"retained","species","Batillaria attramentaria"
 "570","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","af16bf2f97c583b1ded277f88daace8aa697e979",203,"missing",NA,NA
 "571","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","8913dd518b2b555f1e347a1c5bc5d619e41eb23a",29,"missing",NA,NA
-"572","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","b7ce278a1cdbfcb859c1d55b4c8d54fcb8b22d12",71,"retained","class","Dinophyceae"
+"572","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","b7ce278a1cdbfcb859c1d55b4c8d54fcb8b22d12",71,"non-target DNA","class","Dinophyceae"
 "573","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","448073e4175d148efe975253dfc2eebbad444734",13,"predator DNA","species","Carcinus maenas"
 "574","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","afa10c03beb826e2d95e8df0243f6c29ff4ae6f5",30,"incidental ingestion","phylum","Bacillariophyta"
-"575","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","701de5496b24ad78edb3fb8d54d294fb325285af",51,"retained","class","Dinophyceae"
+"575","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","701de5496b24ad78edb3fb8d54d294fb325285af",51,"non-target DNA","class","Dinophyceae"
 "576","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","bee64d1cf491dd4d45125f6aa192c9664e477ea6",164,"missing",NA,NA
 "577","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","88523604f2abc88803c30d35f591b7a87383f12f",80,"missing",NA,NA
 "578","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","8d197bd15722a2601613aa8b9ddbfa647da50af7",33,"missing",NA,NA
@@ -581,19 +581,19 @@
 "580","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","43a450bad25d73f6efce6e4b8a783e85d54e39c6",31,"missing",NA,NA
 "581","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","3aa2daf73b89f140751dc0ee403d632bcf6c1729",36,"missing",NA,NA
 "582","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","bd6f4be5ef5b0c0ba2b8cac39853ea2d0f855a5c",104,"missing",NA,NA
-"583","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","ae10af5cfba10a098e86c4d7db7aa170671c1a8a",30,"retained","species","Heterocapsa rotundata"
+"583","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","ae10af5cfba10a098e86c4d7db7aa170671c1a8a",30,"non-target DNA","species","Heterocapsa rotundata"
 "584","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","23fee0add0375b427b7d5f7edc7e8f102645457b",56,"retained","species","Mytilus trossulus"
 "585","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","e3cb7861b92fbba415de28b69c22323054f2f0ee",39,"missing",NA,NA
 "586","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","dc34e94bd5439da3754292d7fd9c187bf4b8c1fe",37,"retained","species","Rhizaria sp."
 "587","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","b577a7c91428ab2bffeeb9f28e1bc4681ad23b33",6,"missing",NA,NA
 "588","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","983c8b608e6904d41d15bc33f736e45ae45b4ebe",30,"missing",NA,NA
 "589","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","ce96320f1d922690f947f3171b6e7366c3d8492f",10,"non-target DNA","phylum","Ascomycota"
-"590","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","584f26da756c0bf2ae5d8098bc10cc12569937c5",18,"retained","class","Dinophyceae"
+"590","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","584f26da756c0bf2ae5d8098bc10cc12569937c5",18,"non-target DNA","class","Dinophyceae"
 "591","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","3d5e882c5b5c0c92933dd4a8c38e9ec766d2e5d4",15,"non-target DNA","class","Sordariomycetes"
 "592","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","2f4023ac4a77e70a3a3885e6fcb30af0d77f1921",9,"missing",NA,NA
 "593","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","fbc80478e4ab303809c6afd6f703d1b6d0488088",17,"non-target DNA","family","Sporidiobolaceae"
 "594","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","b3b7552ad4cb087f2533f45f05c840503002203e",20,"incidental ingestion","species","Micromonas pusilla"
-"595","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","255710ad982a8de0248b9d903d51aca64fb8e807",9,"retained","order","Suessiales"
+"595","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","255710ad982a8de0248b9d903d51aca64fb8e807",9,"non-target DNA","order","Suessiales"
 "596","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","0ce74050b15681edee10bddb3025bd8cb6702457",9,"missing",NA,NA
 "597","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","cd0c1b11a590effdeafdce0647bb0680d102f3a7",29,"retained","species","Cydia latiferreana"
 "598","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","6102d0ea08ba8295807eda627108e4d8bdea5a59",7,"missing",NA,NA
@@ -604,7 +604,7 @@
 "603","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","09a5570c9cab75e5a404aed82c37cd6066956363",18,"predator DNA","species","Carcinus maenas"
 "604","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","a78a53e8b2d96461122b2304ece6d88ee73e4eda",16,"non-target DNA","genus","Penicillium"
 "605","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","2d617ce912b6a4186ecbde706b9035bf7b89540f",9,"missing",NA,NA
-"606","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","694733e6ede05652fba82bc26dc08641f23266cc",4,"retained","species","Heterocapsa triquetra"
+"606","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","694733e6ede05652fba82bc26dc08641f23266cc",4,"non-target DNA","species","Heterocapsa triquetra"
 "607","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","2ab67b2fda0e32aed8092f56d51213601b7999a9",8,"retained","species","Fucus distichus"
 "608","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","5d1e79c9ce4cfc60fb4c8c1ed10f066ab687b0aa",8,"missing",NA,NA
 "609","SS20-330k-b","SS20-330k",2,"Drayton Harbor","whole crab","0759b721a1efb6d7a01a6bc52b7c8ad6c3b58ab9",7,"missing",NA,NA
@@ -621,11 +621,11 @@
 "620","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","97f80d7f6b6358d8650fa3e83fd2365206cec710",166,"retained","species","Batillaria attramentaria"
 "621","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","af16bf2f97c583b1ded277f88daace8aa697e979",138,"missing",NA,NA
 "622","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","95a159a1591f407043ad5dffc5897489728d8111",15,"missing",NA,NA
-"623","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","b7ce278a1cdbfcb859c1d55b4c8d54fcb8b22d12",76,"retained","class","Dinophyceae"
+"623","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","b7ce278a1cdbfcb859c1d55b4c8d54fcb8b22d12",76,"non-target DNA","class","Dinophyceae"
 "624","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","63c66920a7c688e73b8835628611e3912d451f51",179,"predator DNA","species","Carcinus maenas"
 "625","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","f8369a552f325816430945aa3dfd9a5d8673d539",98,"retained","order","Leptothecata"
 "626","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","afa10c03beb826e2d95e8df0243f6c29ff4ae6f5",40,"incidental ingestion","phylum","Bacillariophyta"
-"627","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","701de5496b24ad78edb3fb8d54d294fb325285af",48,"retained","class","Dinophyceae"
+"627","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","701de5496b24ad78edb3fb8d54d294fb325285af",48,"non-target DNA","class","Dinophyceae"
 "628","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","dd39321bcb93467e907816e5139b76f32d9143f1",3,"predator DNA","species","Carcinus maenas"
 "629","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","8d197bd15722a2601613aa8b9ddbfa647da50af7",44,"missing",NA,NA
 "630","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","ab64601d52e4bdc6855086ab6494cb0c51bdcaef",44,"missing",NA,NA
@@ -633,22 +633,22 @@
 "632","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","3aa2daf73b89f140751dc0ee403d632bcf6c1729",41,"missing",NA,NA
 "633","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","d0b70e1f16b87c34d8ba2ba51832524af7321ad8",111,"predator DNA","species","Carcinus maenas"
 "634","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","cf933fcaf963b3377e6a2d8bf2c5a3fdabc48265",108,"retained","species","Laemodonta punctatostriata"
-"635","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","ae10af5cfba10a098e86c4d7db7aa170671c1a8a",35,"retained","species","Heterocapsa rotundata"
+"635","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","ae10af5cfba10a098e86c4d7db7aa170671c1a8a",35,"non-target DNA","species","Heterocapsa rotundata"
 "636","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","23fee0add0375b427b7d5f7edc7e8f102645457b",30,"retained","species","Mytilus trossulus"
 "637","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","e3cb7861b92fbba415de28b69c22323054f2f0ee",37,"missing",NA,NA
 "638","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","2e6d87c75fd5461ad2ceeeb7837d39cef753c1c4",25,"missing",NA,NA
 "639","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","4db7fc5cafa31f3cd393e04977faead7e2eec40e",44,"incidental ingestion","species","Cymbomonas tetramitiformis"
 "640","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","dc34e94bd5439da3754292d7fd9c187bf4b8c1fe",11,"retained","species","Rhizaria sp."
-"641","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","49f3860c3bfcdf72fae55203367fb01a5a27ca53",8,"retained","species","Heterocapsa rotundata"
+"641","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","49f3860c3bfcdf72fae55203367fb01a5a27ca53",8,"non-target DNA","species","Heterocapsa rotundata"
 "642","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","eac70f351e3d72610ba05d29bf97715d6db9946f",6,"predator DNA","species","Carcinus maenas"
 "643","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","983c8b608e6904d41d15bc33f736e45ae45b4ebe",19,"missing",NA,NA
-"644","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","584f26da756c0bf2ae5d8098bc10cc12569937c5",12,"retained","class","Dinophyceae"
+"644","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","584f26da756c0bf2ae5d8098bc10cc12569937c5",12,"non-target DNA","class","Dinophyceae"
 "645","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","3d5e882c5b5c0c92933dd4a8c38e9ec766d2e5d4",28,"non-target DNA","class","Sordariomycetes"
 "646","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","2f4023ac4a77e70a3a3885e6fcb30af0d77f1921",22,"missing",NA,NA
 "647","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","f0849cfea1ac260a63135f3a210f6ec202a84867",39,"missing",NA,NA
 "648","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","fbc80478e4ab303809c6afd6f703d1b6d0488088",9,"non-target DNA","family","Sporidiobolaceae"
 "649","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","b3b7552ad4cb087f2533f45f05c840503002203e",12,"incidental ingestion","species","Micromonas pusilla"
-"650","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","255710ad982a8de0248b9d903d51aca64fb8e807",8,"retained","order","Suessiales"
+"650","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","255710ad982a8de0248b9d903d51aca64fb8e807",8,"non-target DNA","order","Suessiales"
 "651","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","0ce74050b15681edee10bddb3025bd8cb6702457",14,"missing",NA,NA
 "652","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","34b6f9eccb1f3dd653c2ba0e4f95d63b2f0f8a2d",14,"missing",NA,NA
 "653","SS20-330k-c","SS20-330k",3,"Drayton Harbor","whole crab","f5ae768086e009bac68ef33e204d983eab75fd21",6,"missing",NA,NA
@@ -739,7 +739,7 @@
 "738","SS18-062V-c","SS18-062V",3,"Dungeness Spit","vial","57b2a5af7bed16f947d0a681c6203a38f8a9cd73",72,"predator DNA","species","Carcinus maenas"
 "739","SS18-062V-c","SS18-062V",3,"Dungeness Spit","vial","726670ecb32602a8706c3ceb32e47b02092d9b24",34,"predator DNA","species","Carcinus maenas"
 "740","SS18-062V-c","SS18-062V",3,"Dungeness Spit","vial","ba4d19d22095f7ca5b8bb45bebc4084b36b971bf",5,"missing",NA,NA
-"741","SS18-062V-c","SS18-062V",3,"Dungeness Spit","vial","9ebd0bcbae3f4ee1f10ba13d858e85af17744e67",7,"retained","species","Homo sapiens"
+"741","SS18-062V-c","SS18-062V",3,"Dungeness Spit","vial","9ebd0bcbae3f4ee1f10ba13d858e85af17744e67",7,"in control","species","Homo sapiens"
 "742","SS18-067V-a","SS18-067V",1,"Dungeness Spit","vial","538d38a10b39504ac841b298f510440aec3e5c27",9024,"predator DNA","species","Carcinus maenas"
 "743","SS18-067V-a","SS18-067V",1,"Dungeness Spit","vial","88808c212aba563b539504c1d48c871cf7faa9bd",28,"predator DNA","species","Carcinus maenas"
 "744","SS18-067V-a","SS18-067V",1,"Dungeness Spit","vial","f44554ad035b01f44bfa4b4ce67e43e8f9c67025",31,"predator DNA","species","Carcinus maenas"
@@ -789,19 +789,19 @@
 "788","SS18-070V-c","SS18-070V",3,"Dungeness Spit","vial","35b0cb0f2b34a7a07e9302e0080b9c944668d84a",32,"predator DNA","species","Carcinus maenas"
 "789","SS20-190-a","SS20-190",1,"Drayton Harbor","whole crab","538d38a10b39504ac841b298f510440aec3e5c27",25828,"predator DNA","species","Carcinus maenas"
 "790","SS20-190-a","SS20-190",1,"Drayton Harbor","whole crab","f769000db9067737089b36fb7e6e13518c7d2b81",4908,"retained","species","Hemigrapsus oregonensis"
-"791","SS20-190-a","SS20-190",1,"Drayton Harbor","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",1681,"retained","species","Hematodinium sp."
+"791","SS20-190-a","SS20-190",1,"Drayton Harbor","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",1681,"non-target DNA","species","Hematodinium sp."
 "792","SS20-190-a","SS20-190",1,"Drayton Harbor","whole crab","88808c212aba563b539504c1d48c871cf7faa9bd",24,"predator DNA","species","Carcinus maenas"
 "793","SS20-190-a","SS20-190",1,"Drayton Harbor","whole crab","32b7efd71e9d05973df601c7515b4008fae918d4",428,"retained","species","Hemigrapsus oregonensis"
 "794","SS20-190-a","SS20-190",1,"Drayton Harbor","whole crab","af16bf2f97c583b1ded277f88daace8aa697e979",7,"missing",NA,NA
 "795","SS20-190-b","SS20-190",2,"Drayton Harbor","whole crab","538d38a10b39504ac841b298f510440aec3e5c27",36952,"predator DNA","species","Carcinus maenas"
 "796","SS20-190-b","SS20-190",2,"Drayton Harbor","whole crab","f769000db9067737089b36fb7e6e13518c7d2b81",7223,"retained","species","Hemigrapsus oregonensis"
-"797","SS20-190-b","SS20-190",2,"Drayton Harbor","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",2642,"retained","species","Hematodinium sp."
+"797","SS20-190-b","SS20-190",2,"Drayton Harbor","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",2642,"non-target DNA","species","Hematodinium sp."
 "798","SS20-190-b","SS20-190",2,"Drayton Harbor","whole crab","32b7efd71e9d05973df601c7515b4008fae918d4",1041,"retained","species","Hemigrapsus oregonensis"
 "799","SS20-190-b","SS20-190",2,"Drayton Harbor","whole crab","4ba7c75c2ce40e6d736760546817b402db9a7622",21,"missing",NA,NA
 "800","SS20-190-b","SS20-190",2,"Drayton Harbor","whole crab","df1d7233843748379a2c1aee2e2f20c011dcd365",9,"missing",NA,NA
 "801","SS20-190-c","SS20-190",3,"Drayton Harbor","whole crab","538d38a10b39504ac841b298f510440aec3e5c27",31404,"predator DNA","species","Carcinus maenas"
 "802","SS20-190-c","SS20-190",3,"Drayton Harbor","whole crab","f769000db9067737089b36fb7e6e13518c7d2b81",6200,"retained","species","Hemigrapsus oregonensis"
-"803","SS20-190-c","SS20-190",3,"Drayton Harbor","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",1947,"retained","species","Hematodinium sp."
+"803","SS20-190-c","SS20-190",3,"Drayton Harbor","whole crab","19ff76dc44fc872abc86ab446e637b082ede9e30",1947,"non-target DNA","species","Hematodinium sp."
 "804","SS20-190-c","SS20-190",3,"Drayton Harbor","whole crab","32b7efd71e9d05973df601c7515b4008fae918d4",523,"retained","species","Hemigrapsus oregonensis"
 "805","SS20-190-c","SS20-190",3,"Drayton Harbor","whole crab","001dda642211b135c603f7139e5e3061b31b42aa",4,"missing",NA,NA
 "806","SS20-190-c","SS20-190",3,"Drayton Harbor","whole crab","1ec279e41227d57cad95e52a420fff0490be4f2b",9,"missing",NA,NA
@@ -824,7 +824,7 @@
 "823","SS20-234-b","SS20-234",2,"Drayton Harbor","whole crab","6a99fd58804dc91e9e2b837431362741c8708900",164,"non-target DNA","class","Dothideomycetes"
 "824","SS20-234-b","SS20-234",2,"Drayton Harbor","whole crab","7fae83706e1458b7be6618240ac6de4dcec1b1ab",213,"predator DNA","species","Carcinus maenas"
 "825","SS20-234-b","SS20-234",2,"Drayton Harbor","whole crab","113824e9252a5fa3d0a03b1a8eb9c6b75642432a",176,"predator DNA","species","Carcinus maenas"
-"826","SS20-234-b","SS20-234",2,"Drayton Harbor","whole crab","431013dc964e02b127a82ffa774ef1649197be83",31,"retained","species","Amoebozoa sp."
+"826","SS20-234-b","SS20-234",2,"Drayton Harbor","whole crab","431013dc964e02b127a82ffa774ef1649197be83",31,"non-target DNA","species","Amoebozoa sp."
 "827","SS20-234-c","SS20-234",3,"Drayton Harbor","whole crab","538d38a10b39504ac841b298f510440aec3e5c27",56537,"predator DNA","species","Carcinus maenas"
 "828","SS20-234-c","SS20-234",3,"Drayton Harbor","whole crab","31d967191ff806d3a61cd739fb6493e294bbef7d",935,"predator DNA","species","Carcinus maenas"
 "829","SS20-234-c","SS20-234",3,"Drayton Harbor","whole crab","2cb85c4996fedad6045e5ed280423052dd8a686c",577,"predator DNA","species","Carcinus maenas"

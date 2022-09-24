@@ -152,15 +152,20 @@ unique(filter(blast.dat.filter, is.na(phylum))$class)
 ```
 <br>
 
-There is also one genus of protists, and a genus of amoebas (not shown above).
+There is also one genus of protists, a genus of amoebas, and a class of dinoflagellates (not shown above).
+Hematodinium sp. is a parasite of decapod crustaceans.
+Naegleria is a genus of amoebas
+Monosiga brevicollis is a choanoflagellate often used in lab cultures
 
 These are the bacterial / fungal / amoeba / protist taxa to remove: 
 ```{r}
-to_remove_phyla <- c("Proteobacteria","Planctomycetes","Oomycota","Actinobacteria","Basidiomycota","Ascomycota","Discosea","Evosea","Bacteroidetes")
-to_remove_taxa <- c("Choanoflagellata")
+to_remove_phyla <- c("Proteobacteria","Planctomycetes","Oomycota","Actinobacteria","Basidiomycota","Ascomycota",
+                     "Discosea","Evosea","Bacteroidetes","Heterolobosea")
+to_remove_class <- c("Dinophyceae")
+to_remove_taxa <- c("Choanoflagellata","Hematodinium sp.","Naegleria","Euamoebida","Amoebozoa sp.","Monosiga brevicollis")
 
 blast.dat.filter <- blast.dat.filter %>% 
-  mutate(baf_rm=ifelse(control_rm==0 & (phylum %in% to_remove_phyla | taxon %in% to_remove_taxa), 1, 0))
+  mutate(baf_rm=ifelse(control_rm==0 & (phylum %in% to_remove_phyla | taxon %in% to_remove_taxa | class %in% to_remove_class), 1, 0))
 ``` 
 <br>
 <br>
@@ -250,7 +255,7 @@ length((summary_dat %>% group_by(sample,reason) %>% summarise(sum(nReads)) %>% f
 ```
 <br>
 
-yikes. only 17 out of 28 crab. 
+yikes. only 14 out of 28 crab. 
 <br>
 
 
