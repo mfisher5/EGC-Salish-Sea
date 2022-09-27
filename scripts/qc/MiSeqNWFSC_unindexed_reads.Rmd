@@ -1,0 +1,239 @@
+---
+title: "Explore Un-Assigned Reads"
+author: "M Fisher"
+date: '2022-06-24'
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+# Description
+
+For some reason only 26% of the reads that came off of the MiSeq were indexed, even though the TapeStation size for the library was at the expected 527bp. With 58% of reads attributed to phiX, that leaves 16% of reads in the "Undetermined" file. 
+
+I'm going to use `bash` to look into the un-indexed sample reads, and record what I find here. 
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(ggplot2)
+library(ggrepel)
+```
+<br>
+<br>
+
+
+
+# Use cutadapt to process the file anyway
+
+User directories and inputs
+```{r}
+# folder with fastq files
+fastq_dir <- "data/raw/run2/undetermined"
+
+# folder for output
+output_dir <- "data/raw/run2/undetermined"
+
+# folder for sequencing metadata file
+meta_output_dir <- "data/raw/run2/undetermined"
+
+# which lane of sequencing is being analyzed?
+run <- 2
+
+# ?
+params <- data.frame(minlength=100)
+```
+<br>
+
+
+## Input / output files
+
+### create sequencing metadata file
+
+The minimum info needed for the sequencing metadata file is:
+
+- Sample_name - The name that makes sense to you and your project (No spaces in the name)
+- Locus: The name of the locus you want to use (e.g. Leray_COI)
+- PrimerF: The nucleotide sequence of the forward primer - supports IUPAC characters 
+- PrimerR: Ditto for the reverse primer (also in 5' -> 3' direction)
+- file1: it should match exactly the output of the Miseq.
+- file2: Same for the second read.
+        
+
+Read in the .csv file with the primer sequences
+```{r}
+primer_seqs <- read_csv(here(meta_dir, primerfilename))
+```
+
+Where is the file with the primer sequences, and what is it called? The columns in this file should be as follows:  `primer` | `primerF` | `primerR`. The *primer* name in this file should match the name in the sequencing center metadata file -- if working across different loci, the locus name can be used in this column.  
+```{r}
+meta_dir <- "data"
+primerfilename <- "primer_sequences.csv"
+```
+<br>
+
+<br>
+
+Get all of the sequencing filenames
+```{r}
+## forward
+ffilenames <- list.files(path = here(fastq_dir), 
+                         pattern="*R1_001.fastq.gz")
+## reverse
+rfilenames <- list.files(path = here(fastq_dir), 
+                         pattern="*R2_001.fastq.gz")
+```
+<br>
+
+Grab the sample IDs and sample numbers ("name") from the filenames, arrange them in order of sample number, and combine the datasets.
+```{r}
+fdat <- data.frame(file1=ffilenames) %>%
+  # create sample name / sample ID from file name, without file suffix
+  mutate(sample_name=str_remove(file1,"_L001_R1_001.fastq.gz")) %>%
+  separate(col=sample_name, into=c("sample_id","Sample_name"), sep=-2) %>%
+  # clean up sample id and sample name
+  mutate(sample_id=str_remove(sample_id,"_S"),
+         sample_id=ifelse(str_sub(sample_id,-1)=="_",str_sub(sample_id,1,-2), sample_id),
+         Sample_name=str_remove(Sample_name,"_S"),
+         Sample_name=str_remove(Sample_name,"S")) %>%
+  arrange(as.numeric(Sample_name))
+
+
+rdat <- data.frame(file2=rfilenames) %>%
+  # create sample name / sample ID from file name, without file suffix
+  mutate(sample_name=str_remove(file2,"_L001_R2_001.fastq.gz")) %>%
+  separate(col=sample_name, into=c("sample_id","Sample_name"), sep=-2) %>%
+  # clean up sample id and sample name
+  mutate(sample_id=str_remove(sample_id,"_S"),
+         sample_id=ifelse(str_sub(sample_id,-1)=="_",str_sub(sample_id,1,-2), sample_id),
+         Sample_name=str_remove(Sample_name,"_S"),
+         Sample_name=str_remove(Sample_name,"S")) %>%
+  arrange(as.numeric(Sample_name))
+
+sequencingmetafile <- full_join(fdat,rdat,by=c("Sample_name","sample_id")) %>%
+  dplyr::select(Sample_name,file1,file2)
+
+```
+<br>
+
+Add primer information
+```{r}
+sequencingmetafile %<>%
+  mutate(primer="Leray") %>%
+  left_join(primer_seqs, by="primer") %>%
+  mutate(Locus=primer,
+         PrimerF=primerF,
+         PrimerR=primerR) %>%
+  dplyr::select(Sample_name,file1,file2,PrimerF,PrimerR,Locus)
+```
+<br>
+
+Save file
+```{r}
+write_csv(sequencingmetafile, here(meta_output_dir, paste0("metadata-cutadapt-input-run-", run, "-undetermined.csv")))
+```
+<br>
+<br>
+
+
+### store params 
+
+folder for output from bash script
+```{r}
+outputfolder <- paste0(here(output_dir))
+dir.create(outputfolder)
+
+paramsfile <- paste0(outputfolder,"/params.txt")
+```
+
+sequencing metadata file name and directory
+```{r}
+sequencingmetadatafile <- paste0(here(meta_output_dir, paste0("metadata-cutadapt-input-run-", run, ".csv")))
+```
+<br>
+
+full file path to fastq files
+```{r}
+fastqfolder <- paste0(here(fastq_dir))
+```
+<br>
+
+create and save the params file, which will be called in bash to run cutadapt.
+```{r}
+params2 <- c(fastqfolder,sequencingmetadatafile, outputfolder, params$minlength)
+
+tibble(values = as.character(params2), names = c("fastqfolder", "sequencingmetadatafile", "outputfolder", "minlength")) %>% 
+  pivot_wider(names_from = names,
+              values_from = values) %>%
+  write_csv(paramsfile)
+```
+<br>
+<br>
+
+## Cutadapt wrapper
+
+Run the following in the terminal. This wrapper script will print some parameter values to the terminal (see below) before running the core *cutadapt* script, which is `run.cutadapt.sh`. Note that output from `run.cutadapt.sh` will be saved into a log file, instead of printed to the terminal. 
+```{bash run_cutadapt, eval=FALSE}
+bash scripts/qc/cutadapt_wrapper_undetermined.sh "C:/Users/mfisher5/Documents/EGC-Salish-Sea/data/raw/run2/undetermined/params.txt"
+```
+<br>
+<br>
+<br>
+
+## Cutadapt output
+
+From the log file that records text written to the terminal:
+
+---
+== Summary ===
+
+Total read pairs processed:         15,506,802
+
+  Read 1 with adapter:               2,772,850 (17.9%)
+  
+  Read 2 with adapter:               2,845,344 (18.3%)
+
+== Read fate breakdown ==
+
+Pairs that were too short:             727,486 (4.7%)
+
+Pairs discarded as untrimmed:       13,243,824 (85.4%)
+
+Pairs written (passing filters):     1,535,492 (9.9%)
+
+Total basepairs processed: 8,993,636,941 bp
+
+  Read 1: 4,514,401,469 bp
+  
+  Read 2: 4,479,235,472 bp
+  
+Total written (filtered):    840,296,496 bp (9.3%)
+
+  Read 1:   420,065,429 bp
+  
+  Read 2:   420,231,067 bp
+
+---
+
+Ok, so a bunch of pairs were discarded as untrimmed. According to the cutadapt doc,
+
+`--discard-untrimmed` option (or `--trimmed-only`): *Discard reads in which no adapter was found*
+
+Let's try this again with the option `--Write all reads without adapters to FILE (in FASTA/FASTQ format) instead of writing them to the regular output file.
+
+
+
+
+
+# Search for Leray sequence
+
+
+
+
+
+
