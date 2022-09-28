@@ -1,0 +1,72 @@
+---
+title: "Running BLAST shell (notes)"
+author: "M Fisher (via Eily via Moncho)"
+date: '2022-09-28'
+output: html_document
+---
+
+# Description 
+
+These notes describe the bash shell script used to match the ASV DNA sequences from DADA2 to NCBI's nucleotide database. I run everything in an **Ubuntu for Windows** terminal, not through R. 
+
+**Ubuntu for Windows**: Ubuntu 22.04 LTS app, run in Windows 10
+
+*Dependencies*: wget, gunzip (downloaded using `sudo apt install`)
+
+
+
+# Installing / Updating BLAST
+
+Install the blast database - see [Install BLAST](https://github.com/mfisher5/EGC-Willapa-Bay/blob/main/doc/Install_BLAST.txt) in the doc/ folder
+
+Update the blast database
+```{bash eval=FALSE}
+cd /mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/blastdb
+../bin/update_blastdb.pl --decompress nt
+```
+<br>
+
+make sure that the program `libgomp1` is installed
+```{bash eval=FALSE}
+sudo apt-get install libgomp1
+```
+<br>
+
+# Running BLAST
+
+The command in the terminal will be: 
+```
+cd /mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/bin/
+bash /mnt/c/Users/mfisher5/Documents/EGC-Salish-Sea/scripts/qc/UnD_run_blast.sh
+```
+
+```{bash eval=FALSE}
+#!/usr/bin/env bash
+PATH=$PATH:/mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/bin
+export BLASTDB="/mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/blastdb"
+BLAST_DB='/mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/blastdb/nt'
+blast_output='/mnt/c/Users/mfisher5/Documents/EGC-Salish-Sea/data/raw/run2/undetermined/blast/undetermined_hash_key_blast_2022-09-28.fasta'
+# BLAST PARAMETERS
+PERCENT_IDENTITY="85"
+WORD_SIZE="30"
+EVALUE="1e-30"
+# number of matches recorded in the alignment:
+MAXIMUM_MATCHES="50"
+CULLING="5"
+################################################################################
+# BLAST CLUSTERS
+################################################################################
+echo $(date +%H:%M) "BLASTing..."
+./blastn -query "/mnt/c/Users/mfisher5/Documents/EGC-Salish-Sea/data/raw/run2/undetermined/dada2/undetermined_hash_key.fasta" -db "${BLAST_DB}" -num_threads 16 -perc_identity "${PERCENT_IDENTITY}" -word_size "${WORD_SIZE}" -evalue "${EVALUE}" -max_target_seqs "${MAXIMUM_MATCHES}" -culling_limit="${CULLING}" -outfmt "6 qseqid sseqid sacc pident length mismatch gapopen qcovus qstart qend sstart send evalue bitscore staxids qlen sscinames sseq" -out "${blast_output}"
+
+```
+
+### Log
+
+
+
+
+
+
+
+

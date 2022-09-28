@@ -1,0 +1,583 @@
+---
+title: "DADA2 for Undetermined Reads"
+subtitle: "last run: `r format(Sys.time(), '%B %d, %Y')`"
+author: "M Fisher (from Eily, Moncho)"
+date: '2022-06-19'
+output: 
+  html_document:
+    toc: yes
+---
+
+
+# Description
+
+Used to explore the reads that were not indexed *but* did have a Leray primer on them. I copy and pasted the cutadapt output from the indexed samples into the file folder, so that I could run all the samples together with the "undetermined" samples. Then I'll just blast the Undetermined ASVs.
+
+Run **DADA2** [tutorial here](https://benjjneb.github.io/dada2/tutorial.html) in order to get an amplicon sequence variant (ASV) table, which records the number of times each exact amplicon sequence variant was observed in each sample. 
+
+Certain decisions have to be made throughout the script, so *do not just knit this script with the existing values*. Go through each code chunk in R first, then knit. Certain code chunks will not re-run when the script is knitted, to avoid over-writing existing files.
+
+Input: demultiplexed fastq files, without barcodes / adapters / primers. 
+
+
+
+<br>
+
+# Set up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if(!require("here")) {install.packages("here")}
+if(!require("tidyverse")) {install.packages("tidyverse")}
+if(!require("magrittr")) {install.packages("magrittr")}
+if(!require("digest")) {install.packages("digest")}
+if(!require("seqinr")) {install.packages("seqinr")}
+# if(!requireNamespace("BiocManager", quietly = TRUE)){install.packages("BiocManager")}
+# BiocManager::install("dada2", version = "3.10")
+library(dada2)
+library(digest)
+library(seqinr)
+```
+<br>
+
+User directories
+```{r set up }
+# root directory for cutadapt
+cutadapt_dir <- "data/raw/run2/undetermined"
+# output directory
+outdir <- "data/raw/run2/undetermined/dada2"
+```
+
+User inputs
+```{r}
+run.num = 2
+
+hash = TRUE  # rarely do you want hash = false (EA)
+
+keep.mid.files = FALSE # I find I never look at these / use these and they just take up space (EA)
+```
+<br>
+
+Output file names
+```{r}
+conv_file <- here(outdir,"undetermined_hash_key.csv")
+conv_file.fasta <- here(outdir,"undetermined_hash_key.fasta")
+ASV_file <-  here(outdir,"undetermined_ASV_table.csv")
+```
+<br>
+
+<br>
+
+
+# Prep for DADA2
+
+```{r message=FALSE, warning=FALSE}
+run_cutadapt_dir = paste0(cutadapt_dir, "/noprimers")
+```
+<br>
+
+read in sequencing metadata. set default trim length based on primer. 
+```{r message=FALSE}
+cutadapt.meta <- read_csv(here(run_cutadapt_dir, paste0("output.metadata.csv")))
+marker        <- unique(cutadapt.meta$Locus)
+print(marker)
+```
+```{r echo=FALSE}
+if(marker=="Leray" | marker=="LerayXT"){
+  trimming.length.r1 = 250
+  trimming.length.r2 = 200
+  message("trim lengths set as (r1,r1): ", trimming.length.r1, ",",trimming.length.r2)
+} else if(marker=="BF3"){
+  trimming.length.r1 = 260
+  trimming.length.r2 = 200
+} else{
+  message("please manually enter trim length for this marker.")
+}
+```
+<br>
+
+read in file names.
+```{r}
+fnFs <- sort(list.files(path=here(run_cutadapt_dir), pattern="_R1_001.fastq.fastq", full.names = TRUE))
+fnFs_simple <- str_remove(fnFs,pattern=paste0(here(run_cutadapt_dir),"/"))
+fnRs <- sort(list.files(path=here(run_cutadapt_dir), pattern="_R2_001.fastq.fastq", full.names = TRUE))
+```
+<br>
+
+get the sample names, which will be used to name the filtered files.
+```{r}
+# sample.names <- marker.meta$Sample_name
+prefix <- paste0("Locus_Leray_")
+suffix <- paste0("_L001_R1_001.fastq.fastq")
+sample.names.df <- (cutadapt.meta %>% dplyr::select(file1) %>%
+                      filter(file1 %in% fnFs_simple) %>%
+                    mutate(sample_id=str_remove(file1,prefix)) %>%
+                      mutate(sample_id=str_remove(sample_id,suffix)) %>%
+                      separate(col=sample_id, into=c("sample_id","sample.num"), sep="_S")) %>% dplyr::select(sample_id)
+sample.names <- as.character(sample.names.df$sample_id)
+```
+<br>
+
+remove any files from the cutadapt metadata that don't have corresponding files in the post-cutadapt folder (the indexes that weren't used in the run)
+```{r}
+cutadapt.meta.output <- filter(cutadapt.meta, file1 %in% fnFs_simple)
+```
+<br>
+
+write output directory path for filtered files in the run's cutadapt folder.
+```{r}
+filt.dir <- paste0(cutadapt_dir, "/noprimers_filtered")
+```
+<br>
+
+create directories if they don't exist
+```{r}
+if(!dir.exists(here(filt.dir))){
+  dir.create(path = here(filt.dir),recursive = T)
+}
+if(!dir.exists(here(outdir))){
+  dir.create(path = here(outdir),recursive = T)
+}
+```
+<br>
+
+Double check the quality scores *if not already done with QC script 0*
+Plot forward read quality scores, one sample per group
+```{r eval=FALSE}
+plotQualityProfile(fnFs[c(1,2,6,19,25)])
+plotQualityProfile(fnRs[c(1,2,6,19,25)])
+```
+<br>
+
+
+manually enter trim lengths - if there isn't a default for the marker, or if the defaults are too long based on the quality scores (see script 0_qc)
+```{r eval=FALSE}
+trimming.length.r1 = 250
+trimming.length.r2 = 190
+```
+<br>
+<br>
+
+# DADA2
+
+## Filter and trim
+
+- `truncLen` truncates the sequence length, and should be based on per-base quality scores. I'm using the length that Eily suggested , 120bp.
+- `maxEE` discards reads with high "expected errors" = $\sum(10^{-Q/10})$
+- `rm.phix` removes reads from PhiX spike
+- use `compress` to gzip the output fastqs
+
+```{r}
+output.dada2 <- cutadapt.meta.output %>%
+  #filter(rc == 1) %>% # ONLY SELECT THE BACKWARDS ONES (1) OR FORWARDS ONES (0)
+  mutate(basename=sample.names) %>%
+  mutate(file1  = here(run_cutadapt_dir, file1),
+         file2  = here(run_cutadapt_dir, file2),
+         filtF1 = here(filt.dir, paste0(basename, "_F1_filt.fastq.gz")),
+         filtR1 = here(filt.dir, paste0(basename, "_R1_filt.fastq.gz"))) %>%
+  select(-basename) %>% 
+  mutate (outFs = pmap(.l= list (file1, filtF1, file2, filtR1),
+                       .f = function(a, b, c, d) {
+                         filterAndTrim(a,b,c,d,
+                                       truncLen=c(trimming.length.r1,trimming.length.r2),
+                                       maxN=0, maxEE=c(2,2), truncQ=2, rm.phix=TRUE,
+                                       compress=TRUE, multithread=FALSE )
+                       } ),
+          errF1 = map(filtF1, ~ learnErrors(.x, multithread=FALSE,verbose = 0)),     # Calculate errors
+          errR1 = map(filtR1, ~ learnErrors(.x, multithread=FALSE,verbose = 0)),
+          derepF1 = map(filtF1, derepFastq),                   # dereplicate seqs
+          derepR1 = map(filtR1, derepFastq),
+          dadaF1  = map2(derepF1,errF1, ~ dada(.x, err = .y, multithread = FALSE)),  # dada2
+          dadaR1  = map2(derepR1,errR1, ~ dada(.x, err = .y, multithread = FALSE)),
+          mergers = pmap(.l = list(dadaF1,derepF1, dadaR1,derepR1),                 # merge things
+                         .f = mergePairs ))
+
+output.dada2.und <- output.dada2 %>% filter(Sample_name==0)
+write.csv(output.dada2.und, file=here(outdir,"UnD_dada2_output.csv"))
+```
+
+```{r}
+output.dada2 <- cutadapt.meta.output %>%
+  #filter(rc == 1) %>% # ONLY SELECT THE BACKWARDS ONES (1) OR FORWARDS ONES (0)
+  mutate(basename=sample.names) %>%
+  mutate(file1  = here(run_cutadapt_dir, file1),
+         file2  = here(run_cutadapt_dir, file2),
+         filtF1 = here(filt.dir, paste0(basename, "_F1_filt.fastq.gz")),
+         filtR1 = here(filt.dir, paste0(basename, "_R1_filt.fastq.gz"))) %>%
+  select(-basename)
+```
+```{r}
+output.dada2 <- output.dada2 %>%
+  mutate( errF1 = map(filtF1, ~ learnErrors(.x, multithread=FALSE,verbose = 0)),     # Calculate errors
+          errR1 = map(filtR1, ~ learnErrors(.x, multithread=FALSE,verbose = 0)),
+          derepF1 = map(filtF1, derepFastq),                   # dereplicate seqs
+          derepR1 = map(filtR1, derepFastq),
+          dadaF1  = map2(derepF1,errF1, ~ dada(.x, err = .y, multithread = FALSE)),  # dada2
+          dadaR1  = map2(derepR1,errR1, ~ dada(.x, err = .y, multithread = FALSE)),
+          mergers = pmap(.l = list(dadaF1,derepF1, dadaR1,derepR1),                 # merge things
+                         .f = mergePairs ))
+
+
+seqtab <- makeSequenceTable(output.dada2$mergers)
+
+seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", verbose=TRUE)
+dim(seqtab.nochim)
+
+seqtab.nochim.df <- as.data.frame(seqtab.nochim)
+
+hash=TRUE
+if (hash==TRUE)
+{conv_table <- tibble( Hash = "", Sequence ="")
+  map_chr (colnames(seqtab.nochim.df), ~ digest(.x, algo = "sha1", serialize = F, skip = "auto")) -> Hashes
+  conv_table <- tibble (Hash = Hashes,
+                        Sequence = colnames(seqtab.nochim.df))
+  seqtab.nochim.hashes.df <- seqtab.nochim.df
+  colnames(seqtab.nochim.hashes.df) <- Hashes
+
+  write_csv(conv_table, conv_file) # write the table into a file
+  write.fasta(sequences = as.list(conv_table$Sequence),
+              names     = as.list(conv_table$Hash),
+              file.out = conv_file.fasta)
+  seqtab.nochim.hashes.df <- bind_cols(cutadapt.meta.output %>%
+                                         select(Sample_name, Locus),
+                                       sample.names.df,
+                                seqtab.nochim.hashes.df)
+  seqtab.nochim.hashes.df %>%
+    pivot_longer(cols = c(- Sample_name, -sample_id, - Locus),
+                 names_to = "Hash",
+                 values_to = "nReads") %>%
+    filter(nReads > 0) -> current_asv
+  write_csv(current_asv, ASV_file)    }else{
+    #What do we do if you don't want hashes: two things - Change the header of the ASV table, write only one file
+    seqtab.nochim.df %>%
+      pivot_longer(cols = c(- Sample_name, - Locus),
+                   names_to = "Sequence",
+                   values_to = "nReads") %>%
+      filter(nReads > 0) -> current_asv
+    write_csv(current_asv, ASV_file)
+  }
+
+output.dada2.und <- output.dada2 %>% filter(Sample_name==0)
+seqtab <- makeSequenceTable(output.dada2.und$mergers)
+         
+write.csv(table(nchar(getSequences(seqtab))) %>% as.data.frame() %>%
+  mutate(Length=as.character(Var1),
+         Length=as.numeric(Length)), file=here(outdir,'dada2_filtered_seqLengths_undetermined.csv'))
+```
+Sample 1 - 1019744 reads in 95941 unique sequences.
+Sample 1 - 47322 reads in 6107 unique sequences.
+Sample 1 - 56539 reads in 6514 unique sequences.
+Sample 1 - 42787 reads in 5796 unique sequences.
+Sample 1 - 2955 reads in 678 unique sequences.
+Sample 1 - 21639 reads in 3450 unique sequences.
+Sample 1 - 39462 reads in 6636 unique sequences.
+Sample 1 - 32785 reads in 5241 unique sequences.
+Sample 1 - 7343 reads in 1250 unique sequences.
+Sample 1 - 80448 reads in 9243 unique sequences.
+Sample 1 - 52938 reads in 6782 unique sequences.
+Sample 1 - 55470 reads in 7219 unique sequences.
+Sample 1 - 59316 reads in 8480 unique sequences.
+Sample 1 - 47387 reads in 5961 unique sequences.
+Sample 1 - 49340 reads in 6333 unique sequences.
+Sample 1 - 66974 reads in 7830 unique sequences.
+Sample 1 - 77763 reads in 9072 unique sequences.
+Sample 1 - 75288 reads in 7835 unique sequences.
+Sample 1 - 8856 reads in 1662 unique sequences.
+Sample 1 - 28209 reads in 4071 unique sequences.
+Sample 1 - 28209 reads in 4071 unique sequences.
+Sample 1 - 77151 reads in 9455 unique sequences.
+Sample 1 - 60239 reads in 7791 unique sequences.
+Sample 1 - 27111 reads in 3840 unique sequences.
+Sample 1 - 49528 reads in 6418 unique sequences.
+Sample 1 - 22568 reads in 3126 unique sequences.
+Sample 1 - 42494 reads in 5313 unique sequences.
+Sample 1 - 38430 reads in 3804 unique sequences.
+Sample 1 - 34507 reads in 3790 unique sequences.
+Sample 1 - 29734 reads in 3004 unique sequences.
+Sample 1 - 20389 reads in 3648 unique sequences.
+Sample 1 - 20875 reads in 3132 unique sequences.
+Sample 1 - 32785 reads in 4167 unique sequences.
+Sample 1 - 33177 reads in 4639 unique sequences.
+Sample 1 - 37389 reads in 4924 unique sequences.
+Sample 1 - 32951 reads in 4466 unique sequences.
+Sample 1 - 31931 reads in 4830 unique sequences.
+Sample 1 - 20076 reads in 3250 unique sequences.
+Sample 1 - 33514 reads in 4492 unique sequences.
+Sample 1 - 5973 reads in 909 unique sequences.
+Sample 1 - 3432 reads in 622 unique sequences.
+Sample 1 - 4541 reads in 778 unique sequences.
+Sample 1 - 27507 reads in 4515 unique sequences.
+Sample 1 - 24705 reads in 4456 unique sequences.
+Sample 1 - 16521 reads in 2614 unique sequences.
+Sample 1 - 37045 reads in 4948 unique sequences.
+Sample 1 - 36984 reads in 5185 unique sequences.
+Sample 1 - 49790 reads in 6446 unique sequences.
+Sample 1 - 8498 reads in 1397 unique sequences.
+Sample 1 - 7528 reads in 1399 unique sequences.
+Sample 1 - 12405 reads in 2160 unique sequences.
+Sample 1 - 51595 reads in 8557 unique sequences.
+Sample 1 - 36889 reads in 6569 unique sequences.
+Sample 1 - 34299 reads in 5918 unique sequences.
+Sample 1 - 778 reads in 564 unique sequences.
+Sample 1 - 396 reads in 324 unique sequences.
+Sample 1 - 430 reads in 363 unique sequences.
+Sample 1 - 22222 reads in 3492 unique sequences.
+Sample 1 - 25974 reads in 4056 unique sequences.
+Sample 1 - 37522 reads in 5766 unique sequences.
+Sample 1 - 5306 reads in 1183 unique sequences.
+Sample 1 - 12968 reads in 2267 unique sequences.
+Sample 1 - 21809 reads in 4437 unique sequences.
+Sample 1 - 9126 reads in 1653 unique sequences.
+Sample 1 - 1631 reads in 494 unique sequences.
+Sample 1 - 4361 reads in 938 unique sequences.
+Sample 1 - 30061 reads in 4657 unique sequences.
+Sample 1 - 13730 reads in 2617 unique sequences.
+Sample 1 - 7386 reads in 1423 unique sequences.
+Sample 1 - 8137 reads in 1369 unique sequences.
+Sample 1 - 16449 reads in 2069 unique sequences.
+Sample 1 - 26742 reads in 3178 unique sequences.
+Sample 1 - 33030 reads in 6538 unique sequences.
+Sample 1 - 48256 reads in 8625 unique sequences.
+Sample 1 - 40527 reads in 7162 unique sequences.
+Sample 1 - 29558 reads in 5514 unique sequences.
+Sample 1 - 44186 reads in 8339 unique sequences.
+Sample 1 - 60233 reads in 8914 unique sequences.
+Sample 1 - 46734 reads in 7600 unique sequences.
+Sample 1 - 27924 reads in 4713 unique sequences.
+Sample 1 - 28627 reads in 4835 unique sequences.
+Sample 1 - 29539 reads in 4565 unique sequences.
+Sample 1 - 23040 reads in 3629 unique sequences.
+Sample 1 - 42820 reads in 6623 unique sequences.
+Sample 1 - 35250 reads in 5148 unique sequences.
+Sample 1 - 24845 reads in 3202 unique sequences.
+Sample 1 - 11106 reads in 1886 unique sequences.
+Sample 1 - 17 reads in 14 unique sequences.
+Sample 1 - 1019744 reads in 103140 unique sequences.
+Sample 1 - 47322 reads in 5146 unique sequences.
+Sample 1 - 56539 reads in 5479 unique sequences.
+Sample 1 - 42787 reads in 3998 unique sequences.
+Sample 1 - 2955 reads in 646 unique sequences.
+Sample 1 - 21639 reads in 2675 unique sequences.
+Sample 1 - 39462 reads in 4686 unique sequences.
+Sample 1 - 32785 reads in 4116 unique sequences.
+Sample 1 - 7343 reads in 1003 unique sequences.
+Sample 1 - 80448 reads in 8045 unique sequences.
+Sample 1 - 52938 reads in 4835 unique sequences.
+Sample 1 - 55470 reads in 5365 unique sequences.
+Sample 1 - 59316 reads in 5406 unique sequences.
+Sample 1 - 47387 reads in 5544 unique sequences.
+Sample 1 - 49340 reads in 4989 unique sequences.
+Sample 1 - 66974 reads in 6792 unique sequences.
+Sample 1 - 77763 reads in 6411 unique sequences.
+Sample 1 - 75288 reads in 6755 unique sequences.
+Sample 1 - 8856 reads in 1301 unique sequences.
+Sample 1 - 28209 reads in 2907 unique sequences.
+Sample 1 - 28209 reads in 2907 unique sequences.
+Sample 1 - 77151 reads in 6769 unique sequences.
+Sample 1 - 60239 reads in 5806 unique sequences.
+Sample 1 - 27111 reads in 2991 unique sequences.
+Sample 1 - 49528 reads in 4791 unique sequences.
+Sample 1 - 22568 reads in 2890 unique sequences.
+Sample 1 - 42494 reads in 3975 unique sequences.
+Sample 1 - 38430 reads in 3070 unique sequences.
+Sample 1 - 34507 reads in 2771 unique sequences.
+Sample 1 - 29734 reads in 2480 unique sequences.
+Sample 1 - 20389 reads in 2215 unique sequences.
+Sample 1 - 20875 reads in 2408 unique sequences.
+Sample 1 - 32785 reads in 3228 unique sequences.
+Sample 1 - 33177 reads in 3712 unique sequences.
+Sample 1 - 37389 reads in 3844 unique sequences.
+Sample 1 - 32951 reads in 3426 unique sequences.
+Sample 1 - 31931 reads in 3335 unique sequences.
+Sample 1 - 20076 reads in 2236 unique sequences.
+Sample 1 - 33514 reads in 3619 unique sequences.
+Sample 1 - 5973 reads in 770 unique sequences.
+Sample 1 - 3432 reads in 563 unique sequences.
+Sample 1 - 4541 reads in 658 unique sequences.
+Sample 1 - 27507 reads in 2853 unique sequences.
+Sample 1 - 24705 reads in 2409 unique sequences.
+Sample 1 - 16521 reads in 1964 unique sequences.
+Sample 1 - 37045 reads in 3738 unique sequences.
+Sample 1 - 36984 reads in 3966 unique sequences.
+Sample 1 - 49790 reads in 4870 unique sequences.
+Sample 1 - 8498 reads in 1265 unique sequences.
+Sample 1 - 7528 reads in 1094 unique sequences.
+Sample 1 - 12405 reads in 1680 unique sequences.
+Sample 1 - 51595 reads in 6416 unique sequences.
+Sample 1 - 36889 reads in 4636 unique sequences.
+Sample 1 - 34299 reads in 4277 unique sequences.
+Sample 1 - 778 reads in 398 unique sequences.
+Sample 1 - 396 reads in 208 unique sequences.
+Sample 1 - 430 reads in 236 unique sequences.
+Sample 1 - 22222 reads in 2684 unique sequences.
+Sample 1 - 25974 reads in 3104 unique sequences.
+Sample 1 - 37522 reads in 4251 unique sequences.
+Sample 1 - 5306 reads in 982 unique sequences.
+Sample 1 - 12968 reads in 1751 unique sequences.
+Sample 1 - 21809 reads in 2577 unique sequences.
+Sample 1 - 9126 reads in 1331 unique sequences.
+Sample 1 - 1631 reads in 398 unique sequences.
+Sample 1 - 4361 reads in 786 unique sequences.
+Sample 1 - 30061 reads in 2880 unique sequences.
+Sample 1 - 13730 reads in 1479 unique sequences.
+Sample 1 - 7386 reads in 1141 unique sequences.
+Sample 1 - 8137 reads in 1073 unique sequences.
+Sample 1 - 16449 reads in 1661 unique sequences.
+Sample 1 - 26742 reads in 2840 unique sequences.
+Sample 1 - 33030 reads in 4542 unique sequences.
+Sample 1 - 48256 reads in 6102 unique sequences.
+Sample 1 - 40527 reads in 5856 unique sequences.
+Sample 1 - 29558 reads in 3194 unique sequences.
+Sample 1 - 44186 reads in 4533 unique sequences.
+Sample 1 - 60233 reads in 6967 unique sequences.
+Sample 1 - 46734 reads in 6314 unique sequences.
+Sample 1 - 27924 reads in 4000 unique sequences.
+Sample 1 - 28627 reads in 3619 unique sequences.
+Sample 1 - 29539 reads in 3418 unique sequences.
+Sample 1 - 23040 reads in 2703 unique sequences.
+Sample 1 - 42820 reads in 4841 unique sequences.
+Sample 1 - 35250 reads in 4274 unique sequences.
+Sample 1 - 24845 reads in 2679 unique sequences.
+Sample 1 - 11106 reads in 2359 unique sequences.
+Sample 1 - 17 reads in 15 unique sequences.
+Error: object 'keep.mid.files' not found
+
+<br>
+
+The sequence table is a matrix with rows corresponding to (and named by) the samples, and columns corresponding to (and named by) the sequence variants. 
+```{r}
+seqtab <- makeSequenceTable(output.dada2$mergers)
+dim(seqtab)
+```
+87 | 540
+<br>
+
+filter for only undetermined reads
+```{r}
+output.dada2.und <- output.dada2 %>% filter(Sample_name==0)
+seqtab <- makeSequenceTable(output.dada2.und$mergers)
+         
+write.csv(table(nchar(getSequences(seqtab))) %>% as.data.frame() %>%
+  mutate(Length=as.character(Var1),
+         Length=as.numeric(Length)), file=here(outdir,'dada2_filtered_seqLengths_undetermined.csv'))
+```
+<br>
+
+
+Inspect distribution of sequence lengths:
+```{r echo=FALSE}
+table(nchar(getSequences(seqtab)))
+
+table(nchar(getSequences(seqtab))) %>% as.data.frame() %>%
+  mutate(Length=as.character(Var1),
+         Length=as.numeric(Length)) %>%
+  ggplot( aes(x=Length,y=Freq)) +
+  geom_col() + theme_bw()
+```
+```{r}
+write.csv(table(nchar(getSequences(seqtab))) %>% as.data.frame() %>%
+  mutate(Length=as.character(Var1),
+         Length=as.numeric(Length)), file=here(outdir,'dada2_filtered_seqLengths_undetermined.csv'))
+```
+<br>
+
+
+## Remove chimeras
+
+```{r}
+seqtab.nochim <- removeBimeraDenovo(seqtab, method="consensus", verbose=TRUE)
+dim(seqtab.nochim)
+
+seqtab.nochim.df <- as.data.frame(seqtab.nochim)
+```
+Identified 114 bimeras out of 540 input sequences.
+[1]  87 | 426
+<br>
+
+## Write output
+
+Copy the metadata so it is all in one place
+```{r}
+cutadapt.meta.output %>% write_csv(here(outdir,"dada2.metadata.csv"))
+```
+<br>
+
+Output file names
+```{r}
+conv_file <- here(outdir,"hash_key.csv")
+conv_file.fasta <- here(outdir,"hash_key.fasta")
+ASV_file <-  here(outdir,"ASV_table.csv")
+```
+<br>
+
+If using hashes, set up the output table with hash IDs and write it out.
+```{r}
+if (hash==TRUE)
+{conv_table <- tibble( Hash = "", Sequence ="")
+  map_chr (colnames(seqtab.nochim.df), ~ digest(.x, algo = "sha1", serialize = F, skip = "auto")) -> Hashes
+  conv_table <- tibble (Hash = Hashes,
+                        Sequence = colnames(seqtab.nochim.df))
+  seqtab.nochim.hashes.df <- seqtab.nochim.df
+  colnames(seqtab.nochim.hashes.df) <- Hashes
+
+  write_csv(conv_table, conv_file) # write the table into a file
+  write.fasta(sequences = as.list(conv_table$Sequence),
+              names     = as.list(conv_table$Hash),
+              file.out = conv_file.fasta)
+  seqtab.nochim.hashes.df <- bind_cols(cutadapt.meta.output %>%
+                                         select(Sample_name, Locus),
+                                       sample.names.df,
+                                seqtab.nochim.hashes.df)
+  seqtab.nochim.hashes.df %>%
+    pivot_longer(cols = c(- Sample_name, -sample_id, - Locus),
+                 names_to = "Hash",
+                 values_to = "nReads") %>%
+    filter(nReads > 0) -> current_asv
+  write_csv(current_asv, ASV_file)    }else{
+    #What do we do if you don't want hashes: two things - Change the header of the ASV table, write only one file
+    seqtab.nochim.df %>%
+      pivot_longer(cols = c(- Sample_name, - Locus),
+                   names_to = "Sequence",
+                   values_to = "nReads") %>%
+      filter(nReads > 0) -> current_asv
+    write_csv(current_asv, ASV_file)
+  }
+```
+<br>
+
+# QC: Track reads
+
+Get the number of reads at each step. 
+
+```{r include=FALSE}
+getN <- function(x) sum(getUniques(x))
+```
+
+```{r}
+qc.dat <- output.dada2 %>%
+  select(-file1, -file2, -filtF1, -filtR1, -errF1, -errR1, -derepF1, -derepR1) %>%
+  mutate_at(.vars = c("dadaF1", "dadaR1", "mergers"),
+            ~ sapply(.x,getN)) %>%
+  #  pull(outFs) -> test
+  mutate(input = map_dbl(outFs, ~ .x[1]),
+         filtered = map_dbl(outFs, ~ .x[2]),
+         tabled  = rowSums(seqtab),
+         nonchim = rowSums(seqtab.nochim)) %>%
+  select(Sample_name,
+         Locus,
+         input,
+         filtered,
+         denoised_F = dadaF1,
+         denoised_R = dadaR1,
+         merged = mergers,
+         tabled,
+         nonchim)
+
+## drop
+# if (keep.mid.files==FALSE){
+#   unlink(here(filt.dir), recursive = T)
+# }
+```
+<br>
+
+

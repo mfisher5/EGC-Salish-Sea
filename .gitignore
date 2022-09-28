@@ -1,6 +1,8 @@
 data/raw/*
 data/blast/*
 !data/raw/qc/
+!data/raw/run2/undetermined/cutadapt_log_20220926.txt
+!data/raw/run2/undetermined/params.txt
 !data/primer_sequences.csv
 !data/raw/EGC_Diet_Lane1_indexes-Fisher-corrected.csv
 
