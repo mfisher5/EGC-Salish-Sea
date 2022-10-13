@@ -1,0 +1,243 @@
+---
+title: "Run 2 Results"
+author: "M Fisher"
+date: '2022-10-11'
+output: 
+  html_document:
+    toc: yes
+    toc_float: yes
+---
+
+# Description
+
+Summarize the following from sequencing run 2:
+
+1. Basic prey counts:
+  a. taxonomic depth - what proportion of reads were identified down to genus or species? 
+  b. taxonomic breadth - What was the unique number of taxa identified per site/month? per site?
+  
+2. Per site prey information:
+  a. for each taxon, what proportion of crabs at each site/month had that prey item? *(qc sidebar: of those, what proportion of technical replicates had that prey item?)*
+  b. eDNA index between sites
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(tidyverse)
+library(here)
+library(ggplot2)
+library(ggrepel)
+library(cowplot)
+
+# User inputs
+indir   <- 'data/blast'
+run.num <- 1
+marker  <- 'lerayXT'
+```
+```{r data, include=FALSE}
+dat <- read_csv(here(indir, 'leray_r2_blast_taxonomy_filtered.csv'))
+
+dat <- dat %>% filter(rank!="kingdom") %>% filter(taxon !="Rhizaria sp.")
+```
+<br>
+
+# Prey ID
+
+## Overall
+```{r}
+taxa_summary <- dat %>%
+  mutate(total_reads=sum(dat$nReads),
+         total_crab=length(unique((dat$sample)))) %>%
+  group_by(taxon, rank) %>% 
+  summarise(n_crab=length(unique(sample)),
+            prop_crab=n_crab/total_crab,
+            n_reads=sum(nReads),
+            prop_reads=n_reads/total_reads) %>%
+  distinct() %>% arrange(n_crab)
+```
+```{r fig.height=8,fig.width=9}
+plotdat <- taxa_summary %>%
+  dplyr::select(-prop_crab,-n_reads) %>%
+  arrange(n_crab) %>%    # First sort by val. This sort the dataframe but NOT the factor levels
+  mutate(taxon=factor(taxon, levels=taxon))
+plotdat %>%
+  pivot_longer(cols=c(n_crab,prop_reads),names_to="metric",values_to="value") %>%
+  mutate(metric=ifelse(metric=="n_crab","Crab Count","Prop Sequence Reads")) %>%
+  ggplot(aes(y=value,x=factor(taxon, levels=plotdat$taxon))) +
+  facet_grid(cols=vars(metric),scales="free") +
+  geom_col(aes(fill=rank)) +
+  coord_flip() + theme_bw() + theme(axis.title=element_blank(),
+                                    strip.text=element_text(size=12),
+                                    axis.text.x=element_text(size=12),
+                                    axis.text.y=element_text(size=10))
+```
+<br>
+Some helpful common names:
+
+- Alitta = marine annelids
+- Ampithoe valida = gammarid amphipod
+- Anisopodidae / Sylvicola = wood gnats
+- Bougainvilliidae / Leptothecata = marine hydroids
+- Naididae = oligochaete worms
+- Promesostoma dipterostylum = marine flatworm
+
+And the following are algae: Chrodariaceae (brown), Ectocarpus (brown), Fucus distichus (rockweed), Ascophyllum nodosum (knotted wrack)
+
+<br>
+
+## By site
+```{r}
+site.totals <- dat %>% group_by(site) %>% 
+  summarise(total_reads=sum(nReads),
+         total_crab=length(unique(sample)))
+taxa_summary_bysite <- dat %>%
+  group_by(taxon, rank, site) %>% 
+  summarise(n_crab=length(unique(sample)),
+            n_reads=sum(nReads)) %>%
+  left_join(site.totals,by="site") %>%
+  mutate(prop_crab=n_crab/total_crab,
+         prop_reads=n_reads/total_reads) %>%
+  distinct() %>% arrange(n_crab)
+```
+```{r fig.height=8,fig.width=9}
+plotdat <- taxa_summary_bysite %>%
+  dplyr::select(taxon,rank,site,n_crab,prop_crab) %>%
+  arrange(n_crab) %>%    # First sort by val. This sort the dataframe but NOT the factor levels
+  mutate(taxon=factor(taxon, levels=unique(taxon)))
+plotdat %>%
+  pivot_longer(cols=c(n_crab,prop_crab),names_to="metric",values_to="value") %>%
+  mutate(metric=ifelse(metric=="n_crab","Crab Count","Proportion of crab")) %>%
+  ggplot(aes(y=value,x=factor(taxon, levels=unique(plotdat$taxon)))) +
+  facet_grid(rows=vars(site), cols=vars(metric),scales="free") +
+  geom_col(aes(fill=rank)) +
+  coord_flip() + theme_bw() + theme(axis.title=element_blank(),
+                                    strip.text=element_text(size=12),
+                                    axis.text.x=element_text(size=12),
+                                    axis.text.y=element_text(size=10))
+```
+<br>
+<br>
+
+save this summary
+```{r eval=FALSE, echo=TRUE}
+write_csv(taxa_summary_bysite,here(indir, 'leray_r2_taxonomy_by_site.csv'))
+```
+<br>
+<br>
+
+## By Site, higher order taxonomy
+
+```{r}
+taxa_summary_bysite <- dat %>%
+  group_by(class, site) %>% 
+  summarise(n_crab=length(unique(sample)),
+            n_reads=sum(nReads)) %>%
+  left_join(site.totals,by="site") %>%
+  mutate(prop_crab=n_crab/total_crab,
+         prop_reads=n_reads/total_reads) %>%
+  distinct() %>% arrange(n_crab)
+```
+```{r fig.height=8,fig.width=9}
+plotdat <- taxa_summary_bysite %>%
+  dplyr::select(class,site,n_crab,prop_reads) %>%
+  arrange(n_crab) %>%    # First sort by val. This sort the dataframe but NOT the factor levels
+  mutate(class=factor(class, levels=unique(class)))
+plotdat %>%
+  pivot_longer(cols=c(n_crab,prop_reads),names_to="metric",values_to="value") %>%
+  mutate(metric=ifelse(metric=="n_crab","Crab Count","Prop Sequence Reads")) %>%
+  ggplot(aes(y=value,x=factor(class, levels=unique(plotdat$class)))) +
+  facet_grid(cols=vars(metric),scales="free") +
+  geom_col(aes(fill=site), position="dodge") +
+  scale_fill_manual(values=c("coral4","coral2"),name="Collection Site") +
+  coord_flip() + theme_bw() + theme(axis.title=element_blank(),
+                                    strip.text=element_text(size=12),
+                                    axis.text.x=element_text(size=12),
+                                    axis.text.y=element_text(size=10))
+```
+
+Rhabditophora = flatworms!
+Clitellata = annelid worms
+
+
+# Prey Diversity
+
+For this section, I've assigned common names to each of the taxa listed in the filtered data set above. This allows me to include higher-order prey IDs that aren't nested  -- e.g., family Naididae are oligochaete worms, for which there are no genus/species level IDs in the data set. In contrast, the genus Sylvicola is within the family Anisopodidae, so both will be considered one ID for wood gnats.
+```{r}
+commonID <- read_csv(here('data','taxon_common_ids.csv'))
+```
+<br>
+
+
+## Diversity across sites
+
+What was the unique number of taxa (genus or species) identified?
+
+```{r}
+length(dat %>% filter(rank %in% c("genus","species")) %>% pull(taxon) %>% unique())
+```
+<br>
+
+How many prey taxa per crab? *usually just 1*
+```{r fig.height=3, fig.width=3}
+dat %>% filter(rank %in% c("genus","species")) %>%
+  group_by(sample) %>%
+  summarise(n_taxa=length(unique(taxon))) %>%
+  ggplot() +geom_histogram(aes(x=n_taxa)) +
+  theme_bw() + labs(x="Number of unique taxa",y="Number of crabs")
+```
+
+
+
+
+### nMDS
+
+
+
+## Diversity between sites
+
+### Alpha div
+
+What is the species richness ($\alpha$ diversity) at each site, for species?
+```{r eval=FALSE}
+prey.sp.freq.site <- prey.freq.site %>%
+  filter(level=="species" | level=="genus") %>%
+  dplyr::select(-month,-site_month) %>% distinct()
+
+prey.sp.freq.site %>% group_by(site) %>% summarise(richness=length(unique(taxon)))
+```
+
+<br>
+
+
+What is the species richness ($\alpha$ diversity) at each site, for taxa?
+```{r eval=FALSE}
+prey.freq.site %>% group_by(site) %>% summarise(richness=length(unique(taxon)))
+```
+
+<br>
+
+### Beta div
+
+What is the species richness ($\beta$ diversity) at each site, for species?
+Note that for this sequencing run only, I include *Hemigrapsus sp* and *Mya sp* to species level. 
+```{r eval=FALSE}
+prey.sp.site.mat <- prey.sp.freq.site %>%
+  dplyr::select(site, taxon) %>% distinct() %>%
+  mutate(presence=1) %>%
+  pivot_wider(id_cols="site", names_from="taxon",values_from="presence", values_fill=0)
+
+betadiver(prey.sp.site.mat, method="w")
+```
+
+<br>
+
+
+<br>
+<br>
+
+
+
+
+
+### sidebar
+what is the presence of prey across technical replicates?

@@ -1,5 +1,7 @@
 data/raw/*
+data/taxon_common_ids.csv
 data/blast/*
+data/dada2/pooled_process/*
 !data/raw/qc/
 !data/raw/run2/undetermined/cutadapt_log_20220926.txt
 !data/raw/run2/undetermined/params.txt
@@ -9,6 +11,7 @@ data/blast/*
 data/cutadapt/noprimers/*
 !data/cutadapt/noprimers/output.metadata.csv
 !data/cutadapt/noprimers/log.cutadapt.txt
+data/cutadapt/noprimers_filtered_pooled/*
 
 data/databases/*
 
