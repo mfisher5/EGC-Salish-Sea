@@ -15,6 +15,8 @@ data/cutadapt/noprimers_filtered_pooled/*
 
 data/databases/*
 
+scripts/results_run_2.html
+
 test-run-1/data/*
 !test-run-1/data/metadata-cutadapt-input-lane1.csv
 !test-run-1/data/cutadapt/first_try_misnamed_samples.xlsx

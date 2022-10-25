@@ -34,6 +34,8 @@ sudo apt-get install libgomp1
 
 # Running BLAST
 
+## sept 23
+
 The command in the terminal will be: 
 ```
 cd /mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/bin/
@@ -73,40 +75,54 @@ CULLING="5"
 		-out "${blast_output}"
 ```
 
-### Log
+## oct 25
 
-**2022-06-20** : Nothing was written to the output fasta file, although the empty file was created. blastn returned two types of errors to the terminal-
+I'm going to try running blast with a lower word size. In the sept blast output, I ended up with a hit for a non-native species that hasn't been recorded in the Puget Sound (ascophyllum nodosum). When I manually blasted the sequence that returned this ID, the output showed *Hormosira banksii* at 87% (also non native), and *Fucus spiralis* (84.5%). Yet Ascophyllum is what is being written out as the only ID for that sequence.
 
-`Warning: [blastn] Query_2658 2bffa06e9a63f3.. : Could not calculate ungapped Karlin-Altschul parameters due to an invalid query sequence or its translation. Please verify the query sequence(s) and/or filtering options`
+Ascophyllum nodosum (knotted wrack): 2 crab from Drayton Harbor (85.2% identity in blast, one ASV)
 
+Kurtiella bidentata (small bivalve): 3 crab from Drayton Harbor (>99% identity in blast, three ASVs)
+
+This iteration of blast, I'm going to change the `word size` parameter to 15. From Moncho: "For what I looked up, that is the size of a perfect match for which to start growing the alignment score. If there is nothing too closely related on your db, a long word size will reduce the number of hits to begin with. And with COI, in which every third base can freely change, that is maybe reducing the number of leads. The default value of word size for blastn is 11."
+
+The command in the terminal will be: 
 ```
-FASTA-Reader: Ignoring invalid residues at position(s): On line 5840: 1, 3-5, 9, 11, 14-16, 18-20, 22-36, 38, 40
-
-FASTA-Reader: Ignoring invalid residues at position(s): On line 5842: 1-6, 9-12, 16-20, 22, 24-33, 35, 40
-
-FASTA-Reader: Ignoring invalid residues at position(s): On line 5844: 1-7, 9, 11-15, 18-19, 21-23, 25-26, 30, 33, 35-37, 39
-
-FASTA-Reader: Ignoring invalid residues at position(s): On line 5846: 1-3, 5-6, 9, 11, 13-18, 20, 23, 25, 27-35, 37-38, 40
-
-FASTA-Reader: Ignoring invalid residues at position(s): On line 5848: 1-9, 12-18, 20, 22-25, 27-28, 30, 32, 35-36, 38, 40
-
-FASTA-Reader: Ignoring invalid residues at position(s): On line 5850: 1-2, 5, 7-12, 15-17, 19-21, 23-28, 30, 32-33, 35-36, 38, 40
-
-FASTA-Reader: Ignoring invalid residues at position(s): On line 5852: 2-3, 5, 7, 9, 11-13, 15, 17-18, 20-23, 25-28, 30-40
-
-FASTA-Reader: Ignoring invalid residues at position(s): On line 5854: 1-8, 11-22, 25-26, 28-35, 37-40
-
-FASTA-Reader: Ignoring invalid residues at position(s): On line 5856: 2-3, 5-10, 12, 14, 16, 18-19, 21-23, 25-26, 28-31, 34-35, 37-38, 40
-
-FASTA-Reader: Ignoring invalid residues at position(s): On line 5858: 1, 3-7, 9-17, 19-20, 22, 24, 26, 29-30, 32, 35, 37-40
-
-FASTA-Reader: Ignoring invalid residues at position(s): On line 5860: 1, 3, 5, 7, 9-24, 26, 28-35, 37-40
-
-FASTA-Reader: Ignoring invalid residues at position(s): On line 5862: 1-3, 5-7, 9, 12-17, 19-28, 30-35, 39-40
+cd /mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/bin/
+bash /mnt/c/Users/mfisher5/Documents/EGC-Salish-Sea/scripts/testing_parameters/3_run_blast_run2-ws15.sh
 ```
 
-The hash key fasta (input file) only has hash IDs, with no sequences. Something went wrong in the dada2 scripts. 
+```{bash eval=FALSE}
+#!/usr/bin/env bash
+PATH=$PATH:/mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/bin
+export BLASTDB="/mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/blastdb"
+BLAST_DB='/mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/blastdb/nt'
+blast_output='/mnt/c/Users/mfisher5/Documents/EGC-Salish-Sea/data/blast/hash_key_blast_2022-10-25-ws15.fasta'
+# BLAST PARAMETERS
+PERCENT_IDENTITY="85"
+WORD_SIZE="30"
+EVALUE="1e-30"
+# number of matches recorded in the alignment:
+MAXIMUM_MATCHES="15"
+CULLING="5"
 
+
+	################################################################################
+	# BLAST CLUSTERS
+	################################################################################
+	echo $(date +%H:%M) "BLASTing..." 
+	./blastn \
+		-query "/mnt/c/Users/mfisher5/Documents/EGC-Salish-Sea/data/dada2/hash_key.fasta
+" \
+		-db "${BLAST_DB}" \
+		-num_threads 16 \
+		-perc_identity "${PERCENT_IDENTITY}" \
+		-word_size "${WORD_SIZE}" \
+		-evalue "${EVALUE}" \
+		-max_target_seqs "${MAXIMUM_MATCHES}" \
+		-culling_limit="${CULLING}" \
+		-outfmt "6 qseqid sseqid sacc pident length mismatch gapopen qcovus qstart qend sstart send evalue bitscore staxids qlen sscinames sseq" \
+		-out "${blast_output}"
+```
 
 
 
