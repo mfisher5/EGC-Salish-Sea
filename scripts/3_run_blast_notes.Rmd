@@ -125,6 +125,13 @@ CULLING="5"
 ```
 
 
+## oct 27
+run with an even smaller word size - the default, 11.
+The command in the terminal will be: 
+```
+cd /mnt/c/Users/mfisher5/Documents/my_programs/ncbi-blast-2.13.0+/bin/
+bash /mnt/c/Users/mfisher5/Documents/EGC-Salish-Sea/scripts/testing_parameters/3_run_blast_run2-ws11.sh
+```
 
 
 
